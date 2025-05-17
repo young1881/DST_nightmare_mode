@@ -40,6 +40,7 @@ PrefabFiles = {
 	"living_artifact",
 	"wx78_scanner",
 	"wx78_modules",
+	"wx78",
 	"hitsparks_fx",
 	"mandrakehouse",
 	"dumbbells",

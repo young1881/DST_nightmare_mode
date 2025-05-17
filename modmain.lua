@@ -68,6 +68,7 @@ ISP = GLOBAL.ISP
 LoadPOFile("language/pigman.po", "ch")
 
 Assets = {
+	Asset("SCRIPT", "scripts/wx78_moduledefs.lua"),
 	Asset("IMAGE", "images/status_bg.tex"),
 	Asset("ATLAS", "images/status_bg.xml"),
 	Asset("ATLAS", "images/coin_1.xml"),

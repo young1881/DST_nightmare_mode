@@ -236,6 +236,13 @@ local function OnEatLivingArtifact(inst, data)
     end
 end
 
+local function ChessDamageMultiplier(inst, target)
+    if target and target:HasTag("chess") then
+        return 2.5
+    end
+    return 1
+end
+
 local function WX78Init(inst)
     if inst.prefab ~= "wx78" then return end
 
@@ -253,22 +260,9 @@ local function WX78Init(inst)
     inst:ListenForEvent("ms_respawnedfromghost", OnBecameRobot)
     OnBecameRobot(inst)
 
-    inst:ListenForEvent("onattackother", function(inst, data)
-        if data and data.target and data.target:HasTag("chess") then
-            data.weapon = data.weapon or inst
-            if data.weapon and data.weapon.components.weapon then
-                local old_getdamage = data.weapon.components.weapon.GetDamage
-                if not data.weapon._wx78_damagebuffed then
-                    data.weapon._wx78_damagebuffed = true
-                    data.weapon.components.weapon.GetDamage = function(self, attacker, target)
-                        local base = old_getdamage and old_getdamage(self, attacker, target) or self.damage
-                        if attacker == inst and target and target:HasTag("chess") then
-                            return base * 2.5
-                        end
-                        return base
-                    end
-                end
-            end
+    inst:DoTaskInTime(0, function()
+        if inst.components.combat then
+            inst.components.combat.customdamagemultfn = ChessDamageMultiplier
         end
     end)
 

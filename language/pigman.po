@@ -1,0 +1,342 @@
+msgid ""
+msgstr ""
+"Language: zh\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT Version: 2.0"
+
+#. STRINGS.NAMES.MULTITOOL_AXE_PICKAXE
+msgctxt "STRINGS.NAMES.MULTITOOL_AXE_PICKAXE"
+msgid "Pick/Axe"
+msgstr "多用斧镐+"
+
+#. STRINGS.RECIPE_DESC.MULTITOOL_AXE_PICKAXE
+msgctxt "STRINGS.RECIPE_DESC.MULTITOOL_AXE_PICKAXE"
+msgid "Doubly useful."
+msgstr "现在可以砍敲锤三用了！"
+
+#. STRINGS.NAMES.MUTATEDDEERCLOPS
+msgctxt "STRINGS.NAMES.MUTATEDDEERCLOPS"
+msgid "Crystal Deerclops"
+msgstr "󰀣鱼啦啦󰀍"
+
+#. STRINGS.PIG_TALK_ATTEMPT_TRADE.1
+msgctxt "STRINGS.PIG_TALK_ATTEMPT_TRADE.1"
+msgid "WHAT YOU GOT?"
+msgstr "又要来喂疯猪了？"
+
+#. STRINGS.PIG_TALK_ATTEMPT_TRADE.2
+msgctxt "STRINGS.PIG_TALK_ATTEMPT_TRADE.2"
+msgid "BETTER BE GOOD."
+msgstr "但愿不是怪物肉。"
+
+#. STRINGS.PIG_TALK_FIGHT.1
+msgctxt "STRINGS.PIG_TALK_FIGHT.1"
+msgid "I KILL NOW!"
+msgstr "升堂吧！"
+
+#. STRINGS.PIG_TALK_FIGHT.2
+msgctxt "STRINGS.PIG_TALK_FIGHT.2"
+msgid "YOU GO SMASH!"
+msgstr "我要打爆你的蛋！"
+
+#. STRINGS.PIG_TALK_FIGHT.3
+msgctxt "STRINGS.PIG_TALK_FIGHT.3"
+msgid "RAAAWR!"
+msgstr "一击必杀：启用"
+
+#. STRINGS.PIG_TALK_FIND_LIGHT.1
+msgctxt "STRINGS.PIG_TALK_FIND_LIGHT.1"
+msgid "SCARY"
+msgstr "好可怕"
+
+#. STRINGS.PIG_TALK_FIND_LIGHT.2
+msgctxt "STRINGS.PIG_TALK_FIND_LIGHT.2"
+msgid "NO LIKE DARK"
+msgstr "我比大头更怕黑"
+
+#. STRINGS.PIG_TALK_FIND_LIGHT.3
+msgctxt "STRINGS.PIG_TALK_FIND_LIGHT.3"
+msgid "WHERE IS SUN?"
+msgstr "太阳在哪？"
+
+#. STRINGS.PIG_TALK_FIND_LIGHT.4
+msgctxt "STRINGS.PIG_TALK_FIND_LIGHT.4"
+msgid "STAY NEAR FIRE"
+msgstr "待在火旁"
+
+#. STRINGS.PIG_TALK_FIND_LIGHT.5
+msgctxt "STRINGS.PIG_TALK_FIND_LIGHT.5"
+msgid "FIRE IS GOOD"
+msgstr "想听倪哥讲故事了"
+
+#. STRINGS.PIG_TALK_FIND_MEAT.1
+msgctxt "STRINGS.PIG_TALK_FIND_MEAT.1"
+msgid "ME HUNGRY!"
+msgstr "我饿了！"
+
+#. STRINGS.PIG_TALK_FIND_MEAT.2
+msgctxt "STRINGS.PIG_TALK_FIND_MEAT.2"
+msgid "YUM!"
+msgstr "好吃！"
+
+#. STRINGS.PIG_TALK_FIND_MEAT.3
+msgctxt "STRINGS.PIG_TALK_FIND_MEAT.3"
+msgid "I EAT FOOD!"
+msgstr "是人我吃！"
+
+#. STRINGS.PIG_TALK_FIND_MEAT.4
+msgctxt "STRINGS.PIG_TALK_FIND_MEAT.4"
+msgid "TIME FOR FOOD!"
+msgstr "吃东西的时间到了！"
+
+#. STRINGS.PIG_TALK_FOLLOWWILSON.1
+msgctxt "STRINGS.PIG_TALK_FOLLOWWILSON.1"
+msgid "YOU FRIEND"
+msgstr "兄弟你好香"
+
+#. STRINGS.PIG_TALK_FOLLOWWILSON.2
+msgctxt "STRINGS.PIG_TALK_FOLLOWWILSON.2"
+msgid "I LOVE FRIEND"
+msgstr "不是哥们，别把我喂成疯猪"
+
+#. STRINGS.PIG_TALK_FOLLOWWILSON.3
+msgctxt "STRINGS.PIG_TALK_FOLLOWWILSON.3"
+msgid "YOU IS GOOD"
+msgstr "你是好人，我跟着你！"
+
+#. STRINGS.PIG_TALK_FOLLOWWILSON.4
+msgctxt "STRINGS.PIG_TALK_FOLLOWWILSON.4"
+msgid "I FOLLOW!"
+msgstr "我是你的粉丝"
+
+#. STRINGS.PIG_TALK_GO_HOME.1
+msgctxt "STRINGS.PIG_TALK_GO_HOME.1"
+msgid "HOME TIME!"
+msgstr "该回家玩饥荒了！"
+
+#. STRINGS.PIG_TALK_GO_HOME.2
+msgctxt "STRINGS.PIG_TALK_GO_HOME.2"
+msgid "HOME! HOME!"
+msgstr "回家！回家！"
+
+#. STRINGS.PIG_TALK_HELP_CHOP_WOOD.1
+msgctxt "STRINGS.PIG_TALK_HELP_CHOP_WOOD.1"
+msgid "KILL TREE!"
+msgstr "俺也要当光头强！"
+
+#. STRINGS.PIG_TALK_HELP_CHOP_WOOD.2
+msgctxt "STRINGS.PIG_TALK_HELP_CHOP_WOOD.2"
+msgid "SMASH MEAN TREE!"
+msgstr "打烂坏树！"
+
+#. STRINGS.PIG_TALK_HELP_CHOP_WOOD.3
+msgctxt "STRINGS.PIG_TALK_HELP_CHOP_WOOD.3"
+msgid "I PUNCH TREE!"
+msgstr "狠狠揍这棵树！"
+
+#. STRINGS.PIG_TALK_LOOKATWILSON.1
+msgctxt "STRINGS.PIG_TALK_LOOKATWILSON.1"
+msgid "WHO ARE YOU?"
+msgstr "你是真人吗？"
+
+#. STRINGS.PIG_TALK_LOOKATWILSON.2
+msgctxt "STRINGS.PIG_TALK_LOOKATWILSON.2"
+msgid "YOU NOT PIG"
+msgstr "你不是铸币"
+
+#. STRINGS.PIG_TALK_LOOKATWILSON.3
+msgctxt "STRINGS.PIG_TALK_LOOKATWILSON.3"
+msgid "YOU HAS MEAT?"
+msgstr "你要把我做成肉干？"
+
+#. STRINGS.PIG_TALK_PANIC.1
+msgctxt "STRINGS.PIG_TALK_PANIC.1"
+msgid "NOOOOO!"
+msgstr "怎么天天有人拆我家！"
+
+#. STRINGS.PIG_TALK_PANIC.2
+msgctxt "STRINGS.PIG_TALK_PANIC.2"
+msgid "TOO DARK! TOO DARK!"
+msgstr "天比倪哥还黑啊！"
+
+#. STRINGS.PIG_TALK_PANIC.3
+msgctxt "STRINGS.PIG_TALK_PANIC.3"
+msgid "AAAAAAAAAH!!"
+msgstr "怎么还不点矮星？！"
+
+#. STRINGS.PIG_TALK_PANICBOSS.1
+msgctxt "STRINGS.PIG_TALK_PANICBOSS.1"
+msgid "AHHHH"
+msgstr "啊"
+
+#. STRINGS.PIG_TALK_PANICBOSS.2
+msgctxt "STRINGS.PIG_TALK_PANICBOSS.2"
+msgid "UH OH!"
+msgstr "啊哦！"
+
+#. STRINGS.PIG_TALK_PANICBOSS.3
+msgctxt "STRINGS.PIG_TALK_PANICBOSS.3"
+msgid "ME SCARED"
+msgstr "我害怕了"
+
+#. STRINGS.PIG_TALK_PANICBOSS.4
+msgctxt "STRINGS.PIG_TALK_PANICBOSS.4"
+msgid "BAD!"
+msgstr "坏了！"
+
+#. STRINGS.PIG_TALK_PANICBOSS.5
+msgctxt "STRINGS.PIG_TALK_PANICBOSS.5"
+msgid "OHHH!"
+msgstr "哦哦哦！"
+
+#. STRINGS.PIG_TALK_PANICFIRE.1
+msgctxt "STRINGS.PIG_TALK_PANICFIRE.1"
+msgid "HOT HOT HOT!"
+msgstr "热热热！"
+
+#. STRINGS.PIG_TALK_PANICFIRE.2
+msgctxt "STRINGS.PIG_TALK_PANICFIRE.2"
+msgid "OWWWWW!"
+msgstr "哇！！！！！"
+
+#. STRINGS.PIG_TALK_PANICFIRE.3
+msgctxt "STRINGS.PIG_TALK_PANICFIRE.3"
+msgid "IT BURNS!"
+msgstr "烧起来了！"
+
+#. STRINGS.PIG_TALK_PANICHAUNT.1
+msgctxt "STRINGS.PIG_TALK_PANICHAUNT.1"
+msgid "SPOOKY!"
+msgstr "真可怕！"
+
+#. STRINGS.PIG_TALK_PANICHAUNT.2
+msgctxt "STRINGS.PIG_TALK_PANICHAUNT.2"
+msgid "AAAAH!!"
+msgstr "啊啊！"
+
+#. STRINGS.PIG_TALK_PANICHAUNT.3
+msgctxt "STRINGS.PIG_TALK_PANICHAUNT.3"
+msgid "A GHOST! A GHOST!"
+msgstr "鬼魂！鬼魂！"
+
+#. STRINGS.PIG_TALK_PANICHOUSEFIRE.1
+msgctxt "STRINGS.PIG_TALK_PANICHOUSEFIRE.1"
+msgid "HOUSE BURNS!"
+msgstr "房子着火了！"
+
+#. STRINGS.PIG_TALK_PANICHOUSEFIRE.2
+msgctxt "STRINGS.PIG_TALK_PANICHOUSEFIRE.2"
+msgid "MY STUFF!"
+msgstr "我的东西！"
+
+#. STRINGS.PIG_TALK_PANICHOUSEFIRE.3
+msgctxt "STRINGS.PIG_TALK_PANICHOUSEFIRE.3"
+msgid "AAAH! FIRE!"
+msgstr "啊啊，火！"
+
+#. STRINGS.PIG_TALK_PANICHOUSEFIRE.4
+msgctxt "STRINGS.PIG_TALK_PANICHOUSEFIRE.4"
+msgid "PANIC!"
+msgstr "恐慌！"
+
+#. STRINGS.PIG_TALK_RESCUE.1
+msgctxt "STRINGS.PIG_TALK_RESCUE.1"
+msgid "I HELP YOU!"
+msgstr "我帮你！"
+
+#. STRINGS.PIG_TALK_RESCUE.2
+msgctxt "STRINGS.PIG_TALK_RESCUE.2"
+msgid "OOH! OOH!"
+msgstr "哦！哦！"
+
+#. STRINGS.PIG_TALK_RESCUE.3
+msgctxt "STRINGS.PIG_TALK_RESCUE.3"
+msgid "ME HELP!"
+msgstr "我来帮助！"
+
+#. STRINGS.PIG_TALK_RUNAWAY_WILSON.1
+msgctxt "STRINGS.PIG_TALK_RUNAWAY_WILSON.1"
+msgid "TOO CLOSE!"
+msgstr "太近了！"
+
+#. STRINGS.PIG_TALK_RUNAWAY_WILSON.2
+msgctxt "STRINGS.PIG_TALK_RUNAWAY_WILSON.2"
+msgid "STAY AWAY!"
+msgstr "我不想沾染非气！"
+
+#. STRINGS.PIG_TALK_RUNAWAY_WILSON.3
+msgctxt "STRINGS.PIG_TALK_RUNAWAY_WILSON.3"
+msgid "YOU BACK OFF!"
+msgstr "你退后！"
+
+#. STRINGS.PIG_TALK_RUNAWAY_WILSON.4
+msgctxt "STRINGS.PIG_TALK_RUNAWAY_WILSON.4"
+msgid "THAT MY SPACE."
+msgstr "那是我的地盘。"
+
+#. STRINGS.PIG_TALK_RUN_FROM_SPIDER.1
+msgctxt "STRINGS.PIG_TALK_RUN_FROM_SPIDER.1"
+msgid "SPIDER BAD!"
+msgstr "蜘蛛坏！"
+
+#. STRINGS.PIG_TALK_RUN_FROM_SPIDER.2
+msgctxt "STRINGS.PIG_TALK_RUN_FROM_SPIDER.2"
+msgid "NO LIKE SPIDER!"
+msgstr "不喜欢蜘蛛！"
+
+#. STRINGS.PIG_TALK_RUN_FROM_SPIDER.3
+msgctxt "STRINGS.PIG_TALK_RUN_FROM_SPIDER.3"
+msgid "SCARY SPIDER!"
+msgstr "可怕的蜘蛛！"
+
+#. 兔人
+#. STRINGS.RABBIT_BATTLECRY.1
+msgctxt "STRINGS.RABBIT_BATTLECRY.1"
+msgid "HOP!"
+msgstr "我要给你刷火箭！"
+
+#. STRINGS.RABBIT_BATTLECRY.2
+msgctxt "STRINGS.RABBIT_BATTLECRY.2"
+msgid "KILL!"
+msgstr "兄弟你好香！"
+
+#. STRINGS.RABBIT_BATTLECRY.3
+msgctxt "STRINGS.RABBIT_BATTLECRY.3"
+msgid "DIE!"
+msgstr "去死！"
+
+#. STRINGS.RABBIT_GIVEUP.1
+msgctxt "STRINGS.RABBIT_GIVEUP.1"
+msgid "DONE."
+msgstr "结束。"
+
+#. STRINGS.RABBIT_GIVEUP.2
+msgctxt "STRINGS.RABBIT_GIVEUP.2"
+msgid "LATER."
+msgstr "再见。"
+
+#. STRINGS.RABBIT_MEAT_BATTLECRY.1
+msgctxt "STRINGS.RABBIT_MEAT_BATTLECRY.1"
+msgid "MEAT!"
+msgstr "我要给你刷火箭！"
+
+#. STRINGS.RABBIT_MEAT_BATTLECRY.2
+msgctxt "STRINGS.RABBIT_MEAT_BATTLECRY.2"
+msgid "UNCLEAN!"
+msgstr "兄弟你好香！"
+
+#. STRINGS.RABBIT_MEAT_BATTLECRY.3
+msgctxt "STRINGS.RABBIT_MEAT_BATTLECRY.3"
+msgid "MURDERER!"
+msgstr "我们喜欢你！"
+
+#. STRINGS.RABBIT_MEAT_BATTLECRY.4
+msgctxt "STRINGS.RABBIT_MEAT_BATTLECRY.4"
+msgid "REVENGE!"
+msgstr "你这个人机！"
+
+#. STRINGS.RABBIT_MEAT_BATTLECRY.5
+msgctxt "STRINGS.RABBIT_MEAT_BATTLECRY.5"
+msgid "MONSTER!"
+msgstr "怪物！"

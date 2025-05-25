@@ -46,9 +46,9 @@ local function fn()
 
     inst:AddComponent("edible")
     inst.components.edible.foodtype = FOODTYPE.GEARS
-    inst.components.edible.healthvalue = TUNING.HEALING_HUGE * 2
-    inst.components.edible.hungervalue = TUNING.CALORIES_HUGE * 2
-    inst.components.edible.sanityvalue = TUNING.SANITY_HUGE * 2
+    inst.components.edible.healthvalue = TUNING.HEALING_HUGE * 1.5
+    inst.components.edible.hungervalue = TUNING.CALORIES_HUGE * 1.5
+    inst.components.edible.sanityvalue = TUNING.SANITY_HUGE * 1.5
 
     MakeHauntableLaunchAndSmash(inst)
 

@@ -21,7 +21,7 @@ local function taser_apply_damage(attacker, wx, damage_mult, interval, count)
 end
 
 local excluded_tags = { "ai_stopped", "epic", "player", "abigail", "companion", "INLIMBO", "structure",
-    "butterfly", "wall", "balloon", "groundspike", "stalker_minion",
+    "butterfly", "wall", "balloon", "groundspike", "stalkerminion",
     "smashable" }
 
 local function taser_onblockedorattacked(wx, data, inst)
@@ -155,6 +155,6 @@ local function fn()
 end
 
 STRINGS.CHARACTERS.GENERIC.ANNOUNCE_ATTACH_BUFF_WX78_ELECTRICATTACK = "静电释放，启动！"
-STRINGS.CHARACTERS.GENERIC.ANNOUNCE_DETACH_BUFF_WX78_ELECTRICATTACK = "电力水平恢复正常"
+STRINGS.CHARACTERS.GENERIC.ANNOUNCE_DETACH_BUFF_WX78_ELECTRICATTACK = "静电释放已结束"
 
 return Prefab("wx78_electricattack", fn, nil, { "electrichitsparks", "electricchargedfx" })

@@ -499,6 +499,7 @@ local function scannerfn()
     inst:AddTag("NOBLOCK")
     inst:AddTag("hostile")
     inst:AddTag("chess")
+    inst:AddTag("laser_immune")
 
     inst.AnimState:SetBank("scanner")
     inst.AnimState:SetBuild("wx_scanner")

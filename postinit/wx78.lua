@@ -1,18 +1,18 @@
-STRINGS.RECIPE_DESC.WX78MODULE_MAXHEALTH = "扫描蜘蛛解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MAXHEALTH2 = "扫描蜘蛛战士、喷吐蜘蛛、穴居蜘蛛、洞穴蜘蛛解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MAXSANITY1 = "扫描蝴蝶或月娥解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MAXSANITY = "扫描各类影怪解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_BEE = "扫描蜂王解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MUSIC = "扫描水獭掠夺者、寄居蟹、帝王蟹解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MAXHUNGER1 = "扫描猎狗解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MAXHUNGER = "扫描熊獾、啜食者解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MOVESPEED = "扫描兔子、兔人解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MOVESPEED2 = "扫描发条战车、损坏的发条战车或远古守护者解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_HEAT = "扫描红色猎犬、龙蝇解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_COLD = "扫描蓝色猎犬、独眼巨鹿解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_TASER = "扫描伏特羊解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_NIGHTVISION = "扫描鼹鼠、洞穴蠕虫解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_LIGHT = "扫描鱿鱼、球状光虫解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_MAXHEALTH = "扫描蜘蛛解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_MAXHEALTH2 = "扫描蜘蛛战士、喷吐蜘蛛、穴居蜘蛛、洞穴蜘蛛解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_MAXSANITY1 = "扫描蝴蝶或月娥解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_MAXSANITY = "扫描各类影怪解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_BEE = "扫描蜂王解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_MUSIC = "扫描水獭掠夺者、寄居蟹、帝王蟹解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_MAXHUNGER1 = "扫描猎狗解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_MAXHUNGER = "扫描熊獾、啜食者解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_MOVESPEED = "扫描兔子、兔人解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_MOVESPEED2 = "扫描发条战车、损坏的发条战车或远古守护者解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_HEAT = "扫描红色猎犬、龙蝇解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_COLD = "扫描蓝色猎犬、独眼巨鹿解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_TASER = "扫描伏特羊解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_NIGHTVISION = "扫描鼹鼠、洞穴蠕虫解锁"
+-- STRINGS.RECIPE_DESC.WX78MODULE_LIGHT = "扫描鱿鱼、球状光虫解锁"
 
 AddRecipe2("wx78module_nightvision",
     { Ingredient("scandata", 4), Ingredient("wormlight", 2), Ingredient("lightbulb", 10) },
@@ -60,7 +60,7 @@ end)
 
 AddRecipe2("living_artifact",
     { Ingredient("gears", 2), Ingredient("transistor", 1), Ingredient("trinket_6", 3), Ingredient("bluegem", 2) },
-    TECH.NONE_TWO,
+    TECH.ANCIENT_FOUR,
     {
         atlas = "images/inventoryimages/living_artifact.xml",
         images = "living_artifact.tex",
@@ -77,7 +77,7 @@ TUNING.WX78_CHARGING_FOODS = {
     voltgoatjelly_spice_sugar = 1,
     voltgoatjelly_spice_salt = 1,
     goatmilk = 1,
-    living_artifact = 6
+    living_artifact = 3
 }
 
 TUNING.WX78_SCANNER_MODULETARGETSCANTIME = 5
@@ -237,8 +237,8 @@ local function OnEatLivingArtifact(inst, data)
 end
 
 local function ChessDamageMultiplier(inst, target)
-    if target and target:HasTag("chess") then
-        return 2.5
+    if target and target:HasTag("chess") and not target:HasTag("laser_immune") then
+        return 2.1
     end
     return 1
 end

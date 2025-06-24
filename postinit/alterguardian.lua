@@ -14,13 +14,13 @@ local function TrySpawnLunarPlant(inst, data)
         lunarplant:AddTag("brightmare")
         lunarplant:AddTag("superplant")
         lunarplant.components.combat:SetShouldAvoidAggro(inst)
-        lunarplant.Transform:SetScale(1.25, 1.25, 1.25) 
+        lunarplant.Transform:SetScale(1, 1, 1) 
         TUNING.LUNARTHRALL_PLANT_RANGE = 20
-        if lunarplant.components.damagetyperesist == nil then
-            lunarplant:AddComponent("damagetyperesist")
-        end
-        lunarplant.components.combat:AddNoAggroTag("epic")
-        lunarplant.components.damagetyperesist:AddResist("epic", inst, 0)
+        -- if lunarplant.components.damagetyperesist == nil then
+        --     lunarplant:AddComponent("damagetyperesist")
+        -- end
+        -- lunarplant.components.combat:AddNoAggroTag("epic")
+        -- lunarplant.components.damagetyperesist:AddResist("epic", inst, 0)
         if lunarplant.components.health then
             lunarplant.components.health:SetMaxHealth(1800)
         end
@@ -274,6 +274,19 @@ local function CastSpells(inst)
     ice_circle = not ice_circle
 end
 
+-- 防止新天体炸
+AddPrefabPostInit("alterguardian_phase1_lunarrift", function(inst)
+    if not TheWorld.ismastersim then return end
+
+    if inst.components.groundpounder == nil then
+        inst:AddComponent("groundpounder")
+        inst.components.groundpounder.numRings = 2
+        inst.components.groundpounder.radiusStepDistance = 3
+        inst.components.groundpounder.initialRadius = 3
+        inst.components.groundpounder.damageRings = 2
+    end
+end)
+
 AddStategraphPostInit("alterguardian_phase1", function(sg)
     sg.states.roll.onenter = function(inst, speed)
         inst:EnableRollCollision(true)
@@ -425,11 +438,11 @@ AddPrefabPostInit("alterguardian_phase2", function(inst)
 
     inst:ListenForEvent("killed", TrySpawnLunarPlant)
 
-    if inst.components.damagetyperesist == nil then
-        inst:AddComponent("damagetyperesist")
-    end
-    inst.components.combat:AddNoAggroTag("lunarthrall_plant")
-    inst.components.damagetyperesist:AddResist("lunarthrall_plant", inst, 0)
+    -- if inst.components.damagetyperesist == nil then
+    --     inst:AddComponent("damagetyperesist")
+    -- end
+    -- inst.components.combat:AddNoAggroTag("lunarthrall_plant")
+    -- inst.components.damagetyperesist:AddResist("lunarthrall_plant", inst, 0)
 end)
 
 
@@ -968,11 +981,11 @@ AddPrefabPostInit("alterguardian_phase3", function(inst)
 
     inst:ListenForEvent("killed", TrySpawnLunarPlant)
 
-    if inst.components.damagetyperesist == nil then
-        inst:AddComponent("damagetyperesist")
-    end
-    inst.components.combat:AddNoAggroTag("lunarthrall_plant")
-    inst.components.damagetyperesist:AddResist("lunarthrall_plant", inst, 0)
+    -- if inst.components.damagetyperesist == nil then
+    --     inst:AddComponent("damagetyperesist")
+    -- end
+    -- inst.components.combat:AddNoAggroTag("lunarthrall_plant")
+    -- inst.components.damagetyperesist:AddResist("lunarthrall_plant", inst, 0)
 end)
 
 

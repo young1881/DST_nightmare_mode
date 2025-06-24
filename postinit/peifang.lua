@@ -136,6 +136,8 @@ AddRecipe2("wormwood_lightflier", { Ingredient(CHARACTER_INGREDIENT.HEALTH, 5), 
     }, { "CHARACTER" })
 
 -- 批量莎草纸
+GLOBAL.TUNING.STQKACT = true
+
 AddRecipe2("papyrus_bunch", { Ingredient("cutreeds", 40) }, TECH.CARPENTRY_THREE,
     {
         nounlock = true,
@@ -146,13 +148,15 @@ AddRecipe2("papyrus_bunch", { Ingredient("cutreeds", 40) }, TECH.CARPENTRY_THREE
         numtogive = 10,
         no_deconstruction = true,
         station_tag = "carpentry_station",
-        canbuild = function(
-            recipe, builder, pt, rotation, station)
-            return station == nil or not station.AnimState:IsCurrentAnimation("use"),
+        canbuild = function(recipe, builder, pt, rotation, station)
+            return station == nil
+                or (GLOBAL.TUNING.STQKACT == false and not station.AnimState:IsCurrentAnimation("use"))
+                or GLOBAL.TUNING.STQKACT,
                 "BUSY_STATION"
         end
     })
 STRINGS.RECIPE_DESC.PAPYRUS_BUNCH = "一打纸"
+
 
 -- 批量腐烂物
 AddRecipe2("spoiled_food_bunch",
@@ -167,9 +171,10 @@ AddRecipe2("spoiled_food_bunch",
         numtogive = 30,
         no_deconstruction = true,
         station_tag = "carpentry_station",
-        canbuild = function(
-            recipe, builder, pt, rotation, station)
-            return station == nil or not station.AnimState:IsCurrentAnimation("use"),
+        canbuild = function(recipe, builder, pt, rotation, station)
+            return station == nil
+                or (GLOBAL.TUNING.STQKACT == false and not station.AnimState:IsCurrentAnimation("use"))
+                or GLOBAL.TUNING.STQKACT,
                 "BUSY_STATION"
         end
     })
@@ -287,8 +292,8 @@ AddRecipe2("dumbbell_bluegem", { Ingredient("dumbbell_redgem", 1), Ingredient("b
     TECH.NONE,
     { builder_skill = "wolfgang_dumbbell_crafting" }, { "CHARACTER" })
 --月晷
-AddRecipe2(	"moondial",
-    { Ingredient("abigail_flower", 1),Ingredient("reskin_tool", 1) }, TECH.NONE_TWO,
+AddRecipe2("moondial",
+    { Ingredient("abigail_flower", 1), Ingredient("reskin_tool", 1) }, TECH.NONE_TWO,
     {
         product = "moondial",
         image = "moondial.tex",

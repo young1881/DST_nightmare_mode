@@ -272,6 +272,7 @@ local function AtriumLootFn(lootdropper)
 		end
 
 		-- 一半概率鱼啦啦，一半概率白云
+		lootdropper:AddChanceLoot("alterguardian_phase1_lunarrift", 1)
 		if math.random() < 0.5 then
 			lootdropper:AddChanceLoot("deerclops", 1)
 		else

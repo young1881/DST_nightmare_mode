@@ -73,18 +73,21 @@ local book_defs =
         range = 20,
         can_upgrade = true,
         fn = function(inst, reader)
-            local x, y, z               = reader.Transform:GetWorldPosition()
-            local must_have_one_of_tags = { "petrifiable" } -- 必须包含其中之一的标签
-            local ents                  = TheSim:FindEntities(x, y, z, 20, nil, ATTACK_MUST_NOT_HAVE_TAGS,
-                must_have_one_of_tags)
+            local x,y,z = reader.Transform:GetWorldPosition()
+            local must_have_one_of_tags  = {"petrifiable", "deciduoustree"}  -- 必须包含其中之一的标签
+            if inst:HasTag("upgraded") then
+                for i, v in ipairs(ATTACK_MUST_HAVE_ONE_OF_TAGS) do
+                    table.insert(must_have_one_of_tags, v)
+                end
+            end
+            local ents = TheSim:FindEntities(x, y, z, 20 , nil, ATTACK_MUST_NOT_HAVE_TAGS, must_have_one_of_tags)
 
-            local cant_use              = true -- 条件不足以石化
-            if #ents > 0 then
+            local cant_use = true  -- 条件不足以石化
+            if #ents>0 then
                 for i, target in ipairs(ents) do
-                    if (target:HasTag("petrifiable")) and target.components.growable ~= nil and not target:HasTag("stump") then
-                        local stage = target.components.growable.stage or
-                            1                                          -- 树的级别
-                        local petrify_loot = STAGE_PETRIFY_DATA.normal --石化树信息表
+                    if (target:HasTag("petrifiable") or target:HasTag("deciduoustree")) and target.components.growable ~= nil and not target:HasTag("stump") then
+                        local stage = target.components.growable.stage or 1  -- 树的级别
+                        local petrify_loot = target:HasTag("deciduoustree") and STAGE_PETRIFY_DATA.marble or STAGE_PETRIFY_DATA.normal--石化树信息表
 
                         local rock = SpawnPrefab(petrify_loot[stage].prefab)
                         if rock then
@@ -108,7 +111,7 @@ local book_defs =
 
             return true
         end,
-        perusefn = function(inst, reader)
+        perusefn = function(inst,reader)
             if reader.peruse_medusa then
                 reader.peruse_medusa(reader)
             end

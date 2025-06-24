@@ -72,7 +72,7 @@ local function mySpawnChannelers(inst)
         return
     end
 
-    local prefabs = {"shadowthrall_mouth", "shadowthrall_horns", "shadowdragon"}
+    local prefabs = { "shadowthrall_mouth", "shadowthrall_horns", "shadowdragon" }
 
     if not inst.spawn_channeler_index then
         inst.spawn_channeler_index = 1
@@ -82,7 +82,7 @@ local function mySpawnChannelers(inst)
 
     inst.spawn_channeler_index = inst.spawn_channeler_index + 1
     if inst.spawn_channeler_index > #prefabs then
-        inst.spawn_channeler_index = 1 
+        inst.spawn_channeler_index = 1
     end
 
     inst.spawn_channeler_count = (inst.spawn_channeler_count or 0) + 1
@@ -100,8 +100,8 @@ local function mySpawnChannelers(inst)
 
     DoSpawnChanneler(inst, prefab)
 
-    local extraPrefabs = {"shadoweyeturret", "shadoweyeturret2"}
-    local spawnDistance = 20  -- 眼球塔的距离
+    local extraPrefabs = { "shadoweyeturret", "shadoweyeturret2" }
+    local spawnDistance = 20 -- 眼球塔的距离
 
     for i = 1, 2 do
         local extraPrefab = extraPrefabs[i]
@@ -223,24 +223,22 @@ end)
 
 AddPrefabPostInit("stalker_minion", function(inst)
     if TheWorld.ismastersim then
-    
-    inst:AddComponent("health")
-    inst.components.health:SetMaxHealth(25)
-    inst.components.health.nofadeout = true
-    inst.components.health.redirect = nostalkerordebrisdmg
+        inst:AddComponent("health")
+        inst.components.health:SetMaxHealth(15)
+        inst.components.health.nofadeout = true
+        inst.components.health.redirect = nostalkerordebrisdmg
+
+        inst.components.combat:AddNoAggroTag("shadow_aligned")
+        if inst.components.damagetyperesist == nil then
+            inst:AddComponent("damagetyperesist")
+        end
+        inst.components.damagetyperesist:AddResist("shadow_aligned", inst, 0)
+    end
+end)
+
+AddPrefabPostInit("stalker_atrium", function(inst) --只因者的大小
     inst.Transform:SetScale(1.25, 1.25, 1.25)
-
-    inst.components.combat:AddNoAggroTag("shadow_aligned")
-    if inst.components.damagetyperesist == nil then
-        inst:AddComponent("damagetyperesist")
-    end
-    inst.components.damagetyperesist:AddResist("shadow_aligned", inst, 0)
-    end
 end)
-
-AddPrefabPostInit("stalker_atrium", function(inst)  --只因者的大小
-inst.Transform:SetScale(1.25, 1.25, 1.25) 
-end)
-AddPrefabPostInit("shadowthrall_mouth", function(inst)  --只因者的大小
-inst.Transform:SetScale(1.25, 1.25, 1.25) 
+AddPrefabPostInit("shadowthrall_mouth", function(inst) --只因者的大小
+    inst.Transform:SetScale(1.25, 1.25, 1.25)
 end)

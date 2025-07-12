@@ -14,13 +14,13 @@ local function TrySpawnLunarPlant(inst, data)
         lunarplant:AddTag("brightmare")
         lunarplant:AddTag("superplant")
         lunarplant.components.combat:SetShouldAvoidAggro(inst)
-        lunarplant.Transform:SetScale(1, 1, 1) 
+        lunarplant.Transform:SetScale(1.25, 1.25, 1.25) 
         TUNING.LUNARTHRALL_PLANT_RANGE = 20
-        -- if lunarplant.components.damagetyperesist == nil then
-        --     lunarplant:AddComponent("damagetyperesist")
-        -- end
-        -- lunarplant.components.combat:AddNoAggroTag("epic")
-        -- lunarplant.components.damagetyperesist:AddResist("epic", inst, 0)
+        if lunarplant.components.damagetyperesist == nil then
+            lunarplant:AddComponent("damagetyperesist")
+        end
+        lunarplant.components.combat:AddNoAggroTag("epic")
+        lunarplant.components.damagetyperesist:AddResist("epic", inst, 0)
         if lunarplant.components.health then
             lunarplant.components.health:SetMaxHealth(1800)
         end
@@ -438,11 +438,11 @@ AddPrefabPostInit("alterguardian_phase2", function(inst)
 
     inst:ListenForEvent("killed", TrySpawnLunarPlant)
 
-    -- if inst.components.damagetyperesist == nil then
-    --     inst:AddComponent("damagetyperesist")
-    -- end
-    -- inst.components.combat:AddNoAggroTag("lunarthrall_plant")
-    -- inst.components.damagetyperesist:AddResist("lunarthrall_plant", inst, 0)
+    if inst.components.damagetyperesist == nil then
+        inst:AddComponent("damagetyperesist")
+    end
+    inst.components.combat:AddNoAggroTag("lunarthrall_plant")
+    inst.components.damagetyperesist:AddResist("lunarthrall_plant", inst, 0)
 end)
 
 
@@ -981,11 +981,11 @@ AddPrefabPostInit("alterguardian_phase3", function(inst)
 
     inst:ListenForEvent("killed", TrySpawnLunarPlant)
 
-    -- if inst.components.damagetyperesist == nil then
-    --     inst:AddComponent("damagetyperesist")
-    -- end
-    -- inst.components.combat:AddNoAggroTag("lunarthrall_plant")
-    -- inst.components.damagetyperesist:AddResist("lunarthrall_plant", inst, 0)
+    if inst.components.damagetyperesist == nil then
+        inst:AddComponent("damagetyperesist")
+    end
+    inst.components.combat:AddNoAggroTag("lunarthrall_plant")
+    inst.components.damagetyperesist:AddResist("lunarthrall_plant", inst, 0)
 end)
 
 

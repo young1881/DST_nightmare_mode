@@ -32,8 +32,8 @@ TUNING.ALTERGUARDIAN_PHASE3_ATTACK_RANGE = 42        --攻击范围
 TUNING.ALTERGUARDIAN_PHASE3_WALK_SPEED = 18.5        --移速
 TUNING.ALTERGUARDIAN_PHASE3_RUNAWAY_BLOCK_TIME = 0.1 --可以阻挡天体移动的时间
 TUNING.ALTERGUARDIAN_PHASE3_SUMMONMAXLOOPS = 100     --天体大虚影总数
-TUNING.ALTERGUARDIAN_PHASE3_SUMMONRSQ = 500          --蓝圈大小，20为1格
-TUNING.ALTERGUARDIAN_PHASE3_MAX_STUN_LOCKS = 1       --天体可僵直次数
+TUNING.ALTERGUARDIAN_PHASE3_SUMMONRSQ = 1000         --蓝圈大小，20为1格
+TUNING.ALTERGUARDIAN_PHASE3_MAX_STUN_LOCKS = 1.1     --天体可僵直次数
 
 
 TUNING.ALTERGUARDIAN_PHASE1_MINROLLCOUNT = 8
@@ -41,8 +41,8 @@ local SupremeEpic_planar_dmg = 20 --天体织影位面伤害
 
 
 --TUNING.ALTERGUARDIAN_PHASE2_SUMMONCOOLDOWN = 24.25
-TUNING.ALTERGUARDIAN_PHASE2_SPIKECOOLDOWN     = 9  --地刺cd
-TUNING.ALTERGUARDIAN_PHASE2_LIGHTNINGCOOLDOWN = 35 --旋风劈cd
+TUNING.ALTERGUARDIAN_PHASE2_SPIKECOOLDOWN     = 9   --地刺cd
+TUNING.ALTERGUARDIAN_PHASE2_LIGHTNINGCOOLDOWN = 35  --旋风劈cd
 TUNING.ALTERGUARDIAN_PHASE2_LIGHTNING_DAMAGE  = 380 --旋风劈伤害
 
 --TUNING.ALTERGUARDIAN_PHASE2_SPINCD = 14.25
@@ -50,28 +50,28 @@ TUNING.ALTERGUARDIAN_PHASE2_SPIN_SPEED        = 10 --大风车速度
 TUNING.ALTERGUARDIAN_PHASE2_SPIN2CD           = 20 --某个大风车的cd
 TUNING.ALTERGUARDIAN_PHASE2_DEADSPIN_SPEED    = 16 --旋风劈移速
 
-TUNING.ALTERGUARDIAN_PHASE3_TRAP_MAXRANGE     = 5 --召唤陷阱的范围
+TUNING.ALTERGUARDIAN_PHASE3_TRAP_MAXRANGE     = 5  --召唤陷阱的范围
 TUNING.ALTERGUARDIAN_PHASE3_TRAP_LT           = 40 --陷阱持续时间
 TUNING.ALTERGUARDIAN_PHASE3_ERASERCOOLDOWN    = 60 --秒杀cd
 
 --只因
 TUNING.STALKER_ATRIUM_HEALTH                  = 60000 --血量
 TUNING.STALKER_ATRIUM_PHASE2_HEALTH           = 40000 --二阶段
-TUNING.STALKER_CHANNELERS_CD                  = 6.0 --苦笑暗影CD
-TUNING.STALKER_CHANNELERS_COUNT               = 5 --苦笑暗影数量
-TUNING.STALKER_MINIONS_COUNT                  = 120 --奴隶数量
-TUNING.STALKER_MINIONS_CD                     = 3.0 --奴隶CD
-TUNING.STALKER_FEAST_HEALING                  = 3000 --回血
-TUNING.STALKER_MINDCONTROL_CD                 = 12 --精神控制CD
-TUNING.STALKER_MINDCONTROL_RANGE              = 14 --精神控制范围
-TUNING.STALKER_MINDCONTROL_DURATION           = 4.5 --精神控制时长
-TUNING.FOSSIL_SPIKE_DAMAGE                    = 380 --钉子伤害
-TUNING.STALKER_SPIKES_CD                      = 4 --钉子CD
-TUNING.STALKER_ATTACK_RANGE                   = 5.8 --攻击范围
-TUNING.STALKER_HIT_RANGE                      = 5.5 --攻击范围
-TUNING.STALKER_AOE_RANGE                      = 5.4 --AOE范围
-TUNING.STALKER_DAMAGE                         = 360 --攻击力
-TUNING.STALKER_SPEED                          = 5.5 --只因者移速
+TUNING.STALKER_CHANNELERS_CD                  = 6.0   --苦笑暗影CD
+TUNING.STALKER_CHANNELERS_COUNT               = 5     --苦笑暗影数量
+TUNING.STALKER_MINIONS_COUNT                  = 120   --奴隶数量
+TUNING.STALKER_MINIONS_CD                     = 3.0   --奴隶CD
+TUNING.STALKER_FEAST_HEALING                  = 3000  --回血
+TUNING.STALKER_MINDCONTROL_CD                 = 12    --精神控制CD
+TUNING.STALKER_MINDCONTROL_RANGE              = 14    --精神控制范围
+TUNING.STALKER_MINDCONTROL_DURATION           = 4.5   --精神控制时长
+TUNING.FOSSIL_SPIKE_DAMAGE                    = 380   --钉子伤害
+TUNING.STALKER_SPIKES_CD                      = 4     --钉子CD
+TUNING.STALKER_ATTACK_RANGE                   = 5.8   --攻击范围
+TUNING.STALKER_HIT_RANGE                      = 5.5   --攻击范围
+TUNING.STALKER_AOE_RANGE                      = 5.4   --AOE范围
+TUNING.STALKER_DAMAGE                         = 360   --攻击力
+TUNING.STALKER_SPEED                          = 5.5   --只因者移速
 
 TUNING.IRONLORD_HEALTH                        = 15000 --白云血量
 
@@ -83,30 +83,30 @@ TUNING.PREMIUMWATERINGCAN_WATER_AMOUNT        = 45
 
 --春鹅加强
 TUNING.MOOSE_HEALTH                           = 10000 -- 血量
-TUNING.MOOSE_DAMAGE                           = 150 -- 伤害
-TUNING.MOOSE_ATTACK_PERIOD                    = 3 -- 攻击间隔
-TUNING.MOSSLING_HEALTH                        = 1000 -- 小鸭子血量
-TUNING.MOSSLING_DAMAGE                        = 100 -- 小鸭子伤害
+TUNING.MOOSE_DAMAGE                           = 150   -- 伤害
+TUNING.MOOSE_ATTACK_PERIOD                    = 3     -- 攻击间隔
+TUNING.MOSSLING_HEALTH                        = 1000  -- 小鸭子血量
+TUNING.MOSSLING_DAMAGE                        = 100   -- 小鸭子伤害
 
 -- 蜂后
-TUNING.BEEQUEEN_HEALTH                        = 22500 -- 总血量
-TUNING.BEEQUEEN_DAMAGE                        = 120 -- 伤害
-TUNING.BEEQUEEN_ATTACK_PERIOD                 = 2 -- 攻击间隔
-TUNING.BEEQUEEN_HIT_RANGE                     = 6 -- 攻击范围
-TUNING.BEEQUEEN_MIN_GUARDS_PER_SPAWN          = 8 -- 单次能叫小蜜蜂下限
-TUNING.BEEQUEEN_MAX_GUARDS_PER_SPAWN          = 10 -- 单次能叫小蜜蜂上限
-TUNING.BEEQUEEN_TOTAL_GUARDS                  = 15 -- 小蜜蜂总量上限
-TUNING.BEEQUEEN_DODGE_SPEED                   = 6 -- 移速
-TUNING.BEEQUEEN_HONEYTRAIL_SPEED_PENALTY      = 0.4 -- 地上蜂蜜的减速
-TUNING.BEEQUEEN_SPAWNGUARDS_CD                = { 18, 8, 5, 9 } -- 四个阶段召唤小蜜蜂的cd
+TUNING.BEEQUEEN_HEALTH                        = 22500            -- 总血量
+TUNING.BEEQUEEN_DAMAGE                        = 120              -- 伤害
+TUNING.BEEQUEEN_ATTACK_PERIOD                 = 2                -- 攻击间隔
+TUNING.BEEQUEEN_HIT_RANGE                     = 6                -- 攻击范围
+TUNING.BEEQUEEN_MIN_GUARDS_PER_SPAWN          = 8                -- 单次能叫小蜜蜂下限
+TUNING.BEEQUEEN_MAX_GUARDS_PER_SPAWN          = 10               -- 单次能叫小蜜蜂上限
+TUNING.BEEQUEEN_TOTAL_GUARDS                  = 15               -- 小蜜蜂总量上限
+TUNING.BEEQUEEN_DODGE_SPEED                   = 6                -- 移速
+TUNING.BEEQUEEN_HONEYTRAIL_SPEED_PENALTY      = 0.4              -- 地上蜂蜜的减速
+TUNING.BEEQUEEN_SPAWNGUARDS_CD                = { 18, 8, 5, 9 }  -- 四个阶段召唤小蜜蜂的cd
 TUNING.BEEQUEEN_FOCUSTARGET_CD                = { 0, 0, 10, 12 } -- 四个阶段叫小蜜蜂冲刺的cd
 
 -- 小蜜蜂
 TUNING.BEEGUARD_HEALTH                        = 240 -- 血量
-TUNING.BEEGUARD_DAMAGE                        = 40 -- 伤害
-TUNING.BEEGUARD_SPEED                         = 4 -- 移速
-TUNING.BEEGUARD_DASH_SPEED                    = 8 -- 狂暴的移速
-TUNING.BEEGUARD_PUFFY_DAMAGE                  = 60 -- 狂暴的伤害
+TUNING.BEEGUARD_DAMAGE                        = 40  -- 伤害
+TUNING.BEEGUARD_SPEED                         = 4   -- 移速
+TUNING.BEEGUARD_DASH_SPEED                    = 8   -- 狂暴的移速
+TUNING.BEEGUARD_PUFFY_DAMAGE                  = 60  -- 狂暴的伤害
 
 --蚁狮加强
 local total_day_time                          = 480
@@ -124,8 +124,8 @@ TUNING.SHADOWTHRALL_MOUTH_HEALTH              = 2000
 
 -- 果蝇王加强
 TUNING.LORDFRUITFLY_INITIALSPAWN_TIME         = total_day_time * 8 --提前出现
-TUNING.LORDFRUITFLY_HEALTH                    = 2000       --血量翻倍
-TUNING.LORDFRUITFLY_DAMAGE                    = 50         --基础伤害翻倍
+TUNING.LORDFRUITFLY_HEALTH                    = 2000               --血量翻倍
+TUNING.LORDFRUITFLY_DAMAGE                    = 50                 --基础伤害翻倍
 
 -- 夜莓削弱
 ANCIENTTREE_NIGHTVISION_FRUIT_BUFF_DURATION   = total_day_time / 4
@@ -141,14 +141,14 @@ TUNING.RUINSNIGHTMARE_SPAWN_CHANCE_RIFTS      = .7
 
 -- 晶体巨鹿用来结档
 TUNING.MUTATED_DEERCLOPS_HEALTH               = 50000 -- 血量
-TUNING.MUTATED_DEERCLOPS_DAMAGE               = 1000 -- 物理伤害
-TUNING.MUTATED_DEERCLOPS_PLANAR_DAMAGE        = 80 -- 位面伤害
-TUNING.MUTATED_DEERCLOPS_ATTACK_RANGE         = 36 -- 攻击距离
-TUNING.MUTATED_DEERCLOPS_ATTACK_PERIOD        = 1 -- 攻击间隔
-TUNING.MUTATED_DEERCLOPS_ICELANCE_DAMAGE      = 1500 -- 冰柱伤害
-TUNING.MUTATED_DEERCLOPS_FRENZY_HP            = 0.1 -- 狂暴状态结束需要打的血量百分比
-TUNING.MUTATED_DEERCLOPS_STAGGER_TIME         = 1 -- 虚弱的秒数，原版6
-TUNING.MUTATED_DEERCLOPS_ICELANCE_RANGE.max   = 16 -- 触发冰柱攻击的最近距离 原版12
+TUNING.MUTATED_DEERCLOPS_DAMAGE               = 1000  -- 物理伤害
+TUNING.MUTATED_DEERCLOPS_PLANAR_DAMAGE        = 80    -- 位面伤害
+TUNING.MUTATED_DEERCLOPS_ATTACK_RANGE         = 36    -- 攻击距离
+TUNING.MUTATED_DEERCLOPS_ATTACK_PERIOD        = 1     -- 攻击间隔
+TUNING.MUTATED_DEERCLOPS_ICELANCE_DAMAGE      = 1500  -- 冰柱伤害
+TUNING.MUTATED_DEERCLOPS_FRENZY_HP            = 0.1   -- 狂暴状态结束需要打的血量百分比
+TUNING.MUTATED_DEERCLOPS_STAGGER_TIME         = 1     -- 虚弱的秒数，原版6
+TUNING.MUTATED_DEERCLOPS_ICELANCE_RANGE.max   = 16    -- 触发冰柱攻击的最近距离 原版12
 
 ---位面伤害
 local bossplanardamage                        = 15

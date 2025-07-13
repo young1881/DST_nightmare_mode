@@ -407,15 +407,15 @@ AddPrefabPostInit("pocketwatch_revive", function(inst)
 	if not TheWorld.ismastersim then
 		return
 	end
-	inst._break = 1
+	inst._break = false
 	local function Revive_OnHaunt(inst, haunter)
 		inst.components.hauntable.hauntvalue = TUNING.HAUNT_SMALL
-		if haunter:HasTag("pocketwatchcaster") and inst.components.pocketwatch:CastSpell(haunter, haunter) and inst._break % 2 == 0 then
+		if haunter:HasTag("pocketwatchcaster") and inst.components.pocketwatch:CastSpell(haunter, haunter) and inst._break then
 			inst.components.lootdropper:DropLoot()
 			SpawnPrefab("brokentool").Transform:SetPosition(inst.Transform:GetWorldPosition())
-			inst._break = inst._break + 1
 			inst:Remove() -- cannot withstand the paradox of being haunted by Wanda�s timeline
 		else
+			inst._break = true
 			Launch(inst, haunter, TUNING.LAUNCH_SPEED_SMALL)
 		end
 	end

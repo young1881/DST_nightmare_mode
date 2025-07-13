@@ -18,6 +18,9 @@ TUNING.WANDA_AGE_THRESHOLD_YOUNG = 2 / 3
 TUNING.WANDA_READING_SANITY_MULT = 3
 TUNING.WANDA_READ_PENALTY = 5
 
+TUNING.POCKETWATCH_HEAL_COOLDOWN = 60    --不老表CD减半
+TUNING.POCKETWATCH_RECALL_COOLDOWN = 240 --半天
+
 -- 开局多送1个时间碎片
 table.insert(TUNING.GAMEMODE_STARTING_ITEMS.DEFAULT.WANDA, "pocketwatch_parts")
 
@@ -358,4 +361,75 @@ AddClassPostConstruct("widgets/hoverer", function(hoverer)
 end)
 AddPrefabPostInit("pocketwatch_cherrift", function(inst)
 	inst.cast_scope = 11
+end)
+
+local function Heal_DoCastSpell(inst, doer)
+	local health = doer.components.health
+	if health ~= nil and not health:IsDead() then
+		doer.components.oldager:StopDamageOverTime()
+		health:DoDelta(TUNING.POCKETWATCH_HEAL_HEALING, true, inst.prefab)
+		doer.components.temperature:SetTemperature(TUNING.BOOK_TEMPERATURE_AMOUNT)
+		doer.components.moisture:SetMoistureLevel(0)
+
+		local fx = SpawnPrefab((doer.components.rider ~= nil and doer.components.rider:IsRiding()) and
+			"pocketwatch_heal_fx_mount" or "pocketwatch_heal_fx")
+		fx.entity:SetParent(doer.entity)
+
+		inst.components.rechargeable:Discharge(TUNING.POCKETWATCH_HEAL_COOLDOWN)
+		if doer._acidrain_immunity_task ~= nil then
+			doer._acidrain_immunity_task:Cancel()
+		end
+		doer.components.acidlevel:SetIgnoreAcidRainTicks(true)
+		doer._acidrain_immunity_task = doer:DoTaskInTime(10, function()
+			if doer.components.acidlevel then
+				doer.components.acidlevel:SetIgnoreAcidRainTicks(false)
+			end
+			doer._acidrain_immunity_task = nil
+		end)
+
+		return true
+	end
+end
+
+
+AddPrefabPostInit("pocketwatch_heal", function(inst)
+	if not TheWorld.ismastersim then
+		return
+	end
+
+	inst.components.pocketwatch.DoCastSpell = Heal_DoCastSpell
+end)
+
+
+
+--二次表作祟后不损坏
+AddPrefabPostInit("pocketwatch_revive", function(inst)
+	if not TheWorld.ismastersim then
+		return
+	end
+	local function Revive_OnHaunt(inst, haunter)
+		inst.components.hauntable.hauntvalue = TUNING.HAUNT_SMALL
+		if haunter:HasTag("pocketwatchcaster") and inst.components.pocketwatch:CastSpell(haunter, haunter) then
+
+		else
+			Launch(inst, haunter, TUNING.LAUNCH_SPEED_SMALL)
+		end
+	end
+	if inst.components.hauntable ~= nil then
+		inst.components.hauntable:SetOnHauntFn(Revive_OnHaunt)
+	end
+end)
+
+--旺达溯源表
+AddRecipePostInit("pocketwatch_recall", function(recipe)
+	recipe.ingredients = {
+		Ingredient("pocketwatch_parts", 1),
+		Ingredient("goldnugget", 2)
+	}
+	recipe.level = TECH.SCIENCE_TWO -- 修改为二本
+	recipe.builder_tag = "clockmaker"
+	recipe.no_deconstruction = pocketwatch_nodecon
+end)
+AddRecipePostInit("pocketwatch_portal", function(recipe)
+	recipe.level = TECH.SCIENCE_TWO
 end)

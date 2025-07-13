@@ -76,6 +76,14 @@ local function OnAttacked(inst, data)
     end
 end
 
+SetSharedLootTable("ruinsnightmare",
+    {
+        { "nightmarefuel", 1.00 },
+        { "nightmarefuel", 1.00 },
+        { "nightmarefuel", 0.50 },
+        { "nightmarefuel", 0.25 },
+    })
+
 local states = {
     red = function(inst, target, damageredirecttarget)
         if target.components.temperature ~= nil then
@@ -89,9 +97,9 @@ local states = {
                 target.components.burnable:Ignite(true, inst)
             end
         end
-        if target.components.grogginess then
-            target.components.grogginess:AddGrogginess(3, TUNING.MANDRAKE_SLEEP_TIME)
-        end
+        -- if target.components.grogginess then
+        --     target.components.grogginess:AddGrogginess(3, TUNING.MANDRAKE_SLEEP_TIME)
+        -- end
 
         local x, y, z = target.Transform:GetWorldPosition()
         for i = 1, 4 do
@@ -107,7 +115,7 @@ local states = {
     blue = function(inst, target, damageredirecttarget)
         local canFreezeTarget = target.components.freezable ~= nil and target:IsValid()
         if canFreezeTarget then
-            target.components.freezable:AddColdness(2.5)
+            target.components.freezable:AddColdness(1)
         end
 
         if damageredirecttarget then
@@ -119,7 +127,7 @@ local states = {
         for _, ent in ipairs(nearbyEntities) do
             local canFreeze = ent.components.freezable ~= nil and ent:IsValid() and ent ~= target
             if canFreeze then
-                ent.components.freezable:AddColdness(2.5)
+                ent.components.freezable:AddColdness(1)
             end
         end
 
@@ -127,19 +135,18 @@ local states = {
         local center_spell = SpawnPrefab("deer_ice_circle")
         center_spell.Transform:SetPosition(x, 0, z)
         if center_spell.TriggerFX then
-            center_spell:DoTaskInTime(1, center_spell.TriggerFX)
+            center_spell:DoTaskInTime(8, center_spell.TriggerFX)
         end
         center_spell:DoTaskInTime(10, center_spell.KillFX)
     end,
 
     purple = function(inst, target, damageredirecttarget)
         if damageredirecttarget == nil and target.components.sanity ~= nil then
-            target.components.sanity:DoDelta(-45)
+            target.components.sanity:DoDelta(-20)
         end
 
         local x, y, z = target.Transform:GetWorldPosition()
         local nightmare_prefabs = { "crawlingnightmare", "nightmarebeak", "ruinsnightmare" }
-
         for i, prefab in ipairs(nightmare_prefabs) do
             local offset = 1 + (i - 1) * 0.3
             local angle = (i - 1) * (360 / #nightmare_prefabs) * DEGREES
@@ -148,18 +155,47 @@ local states = {
 
             local nightmare = SpawnPrefab(prefab)
             nightmare.Transform:SetPosition(x + offset_x, y, z + offset_z)
+
+            if prefab == "crawlingnightmare" and nightmare ~= nil then
+                nightmare.components.health:SetMaxHealth(150)
+            end
+
+            if prefab == "nightmarebeak" and nightmare ~= nil then
+                nightmare.components.health:SetMaxHealth(200)
+            end
+
+            if prefab == "ruinsnightmare" and nightmare ~= nil then
+                if nightmare.components.planarentity ~= nil then
+                    nightmare:RemoveComponent("planarentity")
+                    nightmare:RemoveComponent("planardamage")
+                end
+
+                nightmare.components.health:SetMaxHealth(425)
+
+                if nightmare.components.lootdropper ~= nil then
+                    nightmare.components.lootdropper:SetChanceLootTable("ruinsnightmare")
+                end
+
+                if nightmare.components.locomotor ~= nil then
+                    nightmare.components.locomotor.walkspeed = TUNING.RUINSNIGHTMARE_SPEED
+                end
+
+                nightmare.AnimState:HideSymbol("red")
+                nightmare.AnimState:SetLightOverride(0)
+                nightmare.AnimState:SetMultColour(1, 1, 1, 0.5)
+            end
         end
     end,
 
     yellow = function(inst, target)
-        if target.isplayer then
-            target:ScreenFade(false)
-            target:ScreenFade(true, 8, false)
-        elseif target.components.hauntable ~= nil and target.components.hauntable.panicable then
-            target.components.hauntable:Panic(15)
-        end
+        -- if target.isplayer then
+        --     target:ScreenFade(false)
+        --     target:ScreenFade(true, 8, false)
+        -- elseif target.components.hauntable ~= nil and target.components.hauntable.panicable then
+        --     target.components.hauntable:Panic(15)
+        -- end
 
-        local function SummonHolyLight(attacker, target, num, radius, damage)
+        local function SummonHolyLight(attacker, target, num, radius)
             if target and target:IsValid() then
                 local x, _, z = target.Transform:GetWorldPosition()
                 local angle = math.random() * 360
@@ -170,24 +206,20 @@ local states = {
                     local fx_z = z - radius * math.sin(angle * DEGREES)
                     angle = angle + angle_delta
 
-                    local fx = SpawnPrefab("alter_light")
+                    local fx = SpawnPrefab("small_alter_light")
                     if fx then
                         fx.Transform:SetPosition(fx_x, 0, fx_z)
                     end
                 end
 
-                local center_fx = SpawnPrefab("alter_light")
+                local center_fx = SpawnPrefab("small_alter_light")
                 if center_fx then
                     center_fx.Transform:SetPosition(x, 0, z)
                 end
             end
         end
 
-        SummonHolyLight(inst, target, 3, 6, 30)
-        target:DoTaskInTime(30 * FRAMES, function()
-            SummonHolyLight(inst, target, 3, 6, 30)
-            SummonHolyLight(inst, target, 6, 8, 30)
-        end)
+        SummonHolyLight(inst, target, 3, 6)
     end,
 
     orange = function(inst, target, damageredirecttarget)
@@ -222,57 +254,27 @@ local states = {
             end)
         end
 
-        local center_spell = SpawnPrefab("deer_fire_circle")
-        center_spell.Transform:SetPosition(x, 0, z)
-        if center_spell.TriggerFX then
-            center_spell:DoTaskInTime(2.5, center_spell.TriggerFX)
-        end
-        center_spell:DoTaskInTime(20, center_spell.KillFX)
+        -- local center_spell = SpawnPrefab("deer_fire_circle")
+        -- center_spell.Transform:SetPosition(x, 0, z)
+        -- if center_spell.TriggerFX then
+        --     center_spell:DoTaskInTime(2.5, center_spell.TriggerFX)
+        -- end
+        -- center_spell:DoTaskInTime(20, center_spell.KillFX)
     end,
+
     green = function(inst, target, damageredirecttarget)
         if target.components.inventory ~= nil then
             for _, equip_slot in ipairs({ EQUIPSLOTS.BODY, EQUIPSLOTS.HEAD, EQUIPSLOTS.HANDS }) do
                 local item = target.components.inventory:GetEquippedItem(equip_slot)
                 if item ~= nil and item.components.armor ~= nil and item.components.armor.condition > 0 then
-                    local half = math.floor(item.components.armor.condition / 2)
+                    local half = math.floor(item.components.armor.condition * 0.9)
                     item.components.armor:SetCondition(half)
                 end
             end
-
-            local containers = {
-                target.components.inventory.itemslots,
-                target.components.inventory.equipslots,
-                target.components.inventory.opencontainers
-            }
-
-            for i, v in pairs(target.components.inventory.itemslots) do
-                if v ~= nil and v.components.perishable ~= nil then
-                    local freshness = v.components.perishable:GetPercent()
-                    v.components.perishable:SetPercent(freshness * 0.5)
-                end
-            end
-
-            local function HalveStackable(name)
-                local items = target.components.inventory:FindItems(function(item)
-                    return item.prefab == name and item.components.stackable ~= nil
-                end)
-                for _, item in ipairs(items) do
-                    local stacksize = item.components.stackable:StackSize()
-                    local to_remove = math.floor(stacksize / 2)
-                    if to_remove > 0 then
-                        item.components.stackable:Get():Remove()
-                        for i = 1, to_remove - 1 do
-                            local nextitem = item.components.stackable:Get()
-                            if nextitem then nextitem:Remove() end
-                        end
-                    end
-                end
-            end
-
-            HalveStackable("gears")
-            HalveStackable("wortox_soul")
         end
-        target.components.talker:Say("我的装备和物资被削弱了……")
+        local x, y, z = target.Transform:GetWorldPosition()
+        local center_spell = SpawnPrefab("sporecloud")
+        center_spell.Transform:SetPosition(x, 0, z)
     end
 
 }
@@ -416,8 +418,8 @@ local function CommonFn(types, aggro)
 
     inst:AddComponent("combat")
     inst.components.combat:SetRange(aggro and 16 or 14)
-    inst.components.combat:SetDefaultDamage(30)
-    inst.components.combat:SetAttackPeriod(2.8)
+    inst.components.combat:SetDefaultDamage(20)
+    inst.components.combat:SetAttackPeriod(5)
     inst.components.combat:SetRetargetFunction(1, retargetfn)
     inst.components.combat:SetKeepTargetFunction(shouldKeepTarget)
     inst.components.combat.onhitotherfn = gemmagic

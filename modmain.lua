@@ -44,6 +44,7 @@ PrefabFiles = {
 	"hitsparks_fx",
 	"mandrakehouse",
 	"dumbbells",
+	"lunarthrall_plant",
 
 	-- 天体相关
 	"lava_sinkhole",

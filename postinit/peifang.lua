@@ -308,3 +308,5 @@ STRINGS.RECIPE_DESC.MOONDIAL2 = "给下地温玩月亮阿比的"
 Recipe2("ghostlyelixir_lunar",
     { Ingredient("thulecite_pieces", 6), Ingredient("purebrilliance", 2), Ingredient("ghostflower", 5) }, TECH.NONE_TWO,
     { builder_tag = "ghostlyfriend" }, { "CHARACTER" })
+
+    

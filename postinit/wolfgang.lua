@@ -1,10 +1,3 @@
-GLOBAL.setmetatable(GLOBAL.getfenv(1), {
-    __index = function(self, index)
-        return GLOBAL.rawget(GLOBAL, index)
-    end
-})
-
-
 --UpvalueHacker前置
 local UpvalueHacker = {}
 
@@ -63,6 +56,21 @@ end)
 
 --体型变化
 local function fat_gang(inst, data)
+    local mig = 0
+    if inst.components.mightiness.current > 100 then --记录突破了多少肌肉值
+        mig = inst.components.mightiness.current - 100
+    end
+    if not inst:HasTag("GangYi") then --刚毅效果标签
+        inst:DoTaskInTime(0, function()
+            inst:AddTag("GangYi")
+            inst.components.health:SetAbsorptionAmount(0.2 + (mig * 0.005)) --肌肉值150时最高45%减伤
+        end)
+        inst:DoTaskInTime(0.75 + (mig * 0.025), function()                  --肌肉值150时最高2秒霸体
+            inst:RemoveTag("GangYi")
+            inst.components.health:SetAbsorptionAmount(0)
+        end)
+    end
+
     if inst.components.mightiness then
         if inst.components.mightiness.current >= 75 then
             if not inst:HasTag("heavybody") then
@@ -87,6 +95,33 @@ local function oneatpotato(inst, data)
     end
 end
 
+local function mightiness_change(inst)
+    if inst:HasTag("mightiness_mighty") and not inst:HasTag("stronggrip") then
+        inst:AddTag("stronggrip")
+    else
+        if inst:HasTag("stronggrip") then
+            inst:RemoveTag("stronggrip")
+        end
+    end
+end
+
+
+
+--刚毅霸体
+AddStategraphPostInit("wilson", function(sg)
+    local old_onattacked = sg.events['attacked'].fn
+    sg.events['attacked'] = EventHandler('attacked', function(inst, data, ...)
+        if inst.prefab == "wolfgang" and inst.components.mightiness:GetState() == "mighty" and inst:HasTag("GangYi") then --大力士刚毅效果
+            if not inst.sg:HasStateTag('frozen') and not inst.sg:HasStateTag('sleeping') then
+                inst.SoundEmitter:PlaySound("dontstarve/characters/wolfgang/hurt")
+                return
+            end
+        end
+        return old_onattacked(inst, data, ...)
+    end)
+end)
+
+
 
 --刚子！
 AddPrefabPostInit("wolfgang", function(inst)
@@ -96,11 +131,12 @@ AddPrefabPostInit("wolfgang", function(inst)
     inst:AddTag("wolfgang_overbuff_4")
     inst:AddTag("wolfgang_overbuff_5")
 
-    if not TheWorld.ismastersim then
-        return inst
-    end
-    inst.Gangweile = true
-    inst.yongqi_gang = false
+    -- EvilState(inst)
+    -- if not TheWorld.ismastersim then
+    --     return inst
+    -- end
+    -- inst.Gangweile = true
+    -- inst.yongqi_gang = false
 
 
     inst:DoTaskInTime(0, function()
@@ -108,17 +144,18 @@ AddPrefabPostInit("wolfgang", function(inst)
     end)
 
 
-    local function CustomSanityFn1(inst, dt) --理智越低扣理智光环越大
-        local health_drain = (1 - inst.components.sanity:GetPercentWithPenalty()) * 0.1
+    -- local function CustomSanityFn1(inst, dt) --理智越低扣理智光环越大
+    --     local health_drain = (1 - inst.components.sanity:GetPercentWithPenalty()) * 0.1
 
-        if not inst.yongqi_gang then --勇气哨BUFF会阻止这个额外光环
-            return -health_drain
-        else
-            return 0
-        end
-    end
+    --     if not inst.yongqi_gang then --勇气哨BUFF会阻止这个额外光环
+    --         return -health_drain
+    --     else
+    --         return 0
+    --     end
+    -- end
 
-    inst.components.sanity.custom_rate_fn = CustomSanityFn1
+    -- inst.components.sanity.custom_rate_fn = CustomSanityFn1
+
 
     inst:DoPeriodicTask(6.4, function() --额外饥饿
         if not inst:HasTag("playerghost") and inst.components.hunger and inst.components.mightiness and inst.components.mightiness.current >= 75 then
@@ -128,6 +165,7 @@ AddPrefabPostInit("wolfgang", function(inst)
                 inst.components.hunger:DoDelta(-((inst.components.mightiness.current - 100) * 0.01), true)
             end
         end
+        print("inst.components.combat.damagemultiplier: ", inst.components.combat.externaldamagemultipliers)
     end)
 
 
@@ -145,6 +183,7 @@ AddPrefabPostInit("wolfgang", function(inst)
 
     inst:ListenForEvent("oneat", oneatpotato) --吃土豆回20San
     inst:ListenForEvent("attacked", fat_gang) --监控肌肉
+    -- inst:ListenForEvent("mightiness_statechange", mightiness_change) --强壮状态不被缴械
 end)
 
 
@@ -298,10 +337,19 @@ local function NewOnPlayed(inst, doer)
         end
         if inst.CN and doer.yongqi_gang == false then
             inst.components.rechargeable:Discharge(240)
-            doer.components.talker:Say("各位，是时候袭击土豆了！")
+            doer.components.talker:Say("各位，振奋起来！")
             doer.yongqi_gang = true
+            doer.components.sanity.neg_aura_mult = 0.25
+            doer.components.eater:SetAbsorptionModifiers(1, 1, 0.5)
             doer:DoTaskInTime(120, function()
                 doer.yongqi_gang = false
+                if doer.components.sanity then
+                    doer.components.sanity.neg_aura_mult = 1
+                end
+
+                if doer.components.eater ~= nil then
+                    doer.components.eater:SetAbsorptionModifiers(1, 1, 1)
+                end
             end)
             --队友及自己回San
             for k, v in pairs(TheSim:FindEntities(x, y, z, 20, { "player" })) do

@@ -6,6 +6,26 @@ local function anticheating(inst)
     inst.components.freezable:SetRedirectFn(TrueFn)
 end
 
+local lunargazer_limit = 3
+local lunargazer_possibility = 0.1
+
+local function TrySpawnLunarGrazer(inst, data)
+    if data.victim and data.victim:IsValid() and data.victim.isplayer and lunargazer_limit > 0 and math.random() < lunargazer_possibility then
+        local lunargazer = SpawnPrefab("lunar_grazer")
+        lunargazer.Transform:SetPosition(data.victim.Transform:GetWorldPosition())
+        lunargazer.components.combat:SetShouldAvoidAggro(inst)
+        lunargazer:AddTag("superplant")
+        if lunargazer.components.damagetyperesist == nil then
+            lunargazer:AddComponent("damagetyperesist")
+        end
+        lunargazer.components.combat:AddNoAggroTag("epic")
+        lunargazer.components.combat:AddNoAggroTag("superplant")
+        lunargazer.components.damagetyperesist:AddResist("epic", inst, 0)
+        lunargazer.components.damagetyperesist:AddResist("superplant", inst, 0)
+        lunargazer_limit = lunargazer_limit - 1
+    end
+end
+
 local function TrySpawnLunarPlant(inst, data)
     if data.victim and data.victim:IsValid() and data.victim.isplayer then
         local lunarplant = SpawnPrefab("lunarthrall_plant")
@@ -14,7 +34,7 @@ local function TrySpawnLunarPlant(inst, data)
         lunarplant:AddTag("brightmare")
         lunarplant:AddTag("superplant")
         lunarplant.components.combat:SetShouldAvoidAggro(inst)
-        lunarplant.Transform:SetScale(1.25, 1.25, 1.25) 
+        lunarplant.Transform:SetScale(1.25, 1.25, 1.25)
         TUNING.LUNARTHRALL_PLANT_RANGE = 20
         if lunarplant.components.damagetyperesist == nil then
             lunarplant:AddComponent("damagetyperesist")
@@ -26,6 +46,32 @@ local function TrySpawnLunarPlant(inst, data)
         end
     end
 end
+
+AddPrefabPostInit("lunarthrall_plant_vine_end", function(inst)
+    if not TheWorld.ismastersim then
+        return
+    end
+    if inst.components.damagetyperesist == nil then
+        inst:AddComponent("damagetyperesist")
+    end
+    if inst.components.combat then
+        inst.components.combat:AddNoAggroTag("epic")
+    end
+    inst.components.damagetyperesist:AddResist("epic", inst, 0)
+end)
+
+AddPrefabPostInit("lunarthrall_plant_vine", function(inst)
+    if not TheWorld.ismastersim then
+        return
+    end
+    if inst.components.damagetyperesist == nil then
+        inst:AddComponent("damagetyperesist")
+    end
+    if inst.components.combat then
+        inst.components.combat:AddNoAggroTag("epic")
+    end
+    inst.components.damagetyperesist:AddResist("epic", inst, 0)
+end)
 
 AddStategraphPostInit("lunarthrall_plant", function(sg)
     local function ShouldModify(inst)
@@ -980,6 +1026,7 @@ AddPrefabPostInit("alterguardian_phase3", function(inst)
     inst:AddComponent("truedamage")
 
     inst:ListenForEvent("killed", TrySpawnLunarPlant)
+    inst:ListenForEvent("killed", TrySpawnLunarGrazer)
 
     if inst.components.damagetyperesist == nil then
         inst:AddComponent("damagetyperesist")

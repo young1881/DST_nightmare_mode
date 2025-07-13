@@ -82,6 +82,7 @@ AddPrefabPostInit("dragonfly", function(inst)
 	if not TheWorld.ismastersim then
 		return inst
 	end
+	inst.components.lootdropper:AddChanceLoot('dragon_scales', 1)
 
 	inst.components.lootdropper:AddChanceLoot('lightninggoathorn', 1)
 
@@ -272,15 +273,18 @@ local function AtriumLootFn(lootdropper)
 		end
 
 		-- 一半概率鱼啦啦，一半概率白云
-		lootdropper:AddChanceLoot("alterguardian_phase1_lunarrift", 1)
-		if math.random() < 0.5 then
-			lootdropper:AddChanceLoot("deerclops", 1)
-		else
-			for i = 1, 30 do
-				lootdropper:AddChanceLoot('cursed_monkey_token', 1)
-			end
-			lootdropper:AddChanceLoot('ironlord_death', 1)
-		end
+		-- lootdropper:AddChanceLoot("alterguardian_phase1_lunarrift", 1)
+		-- if math.random() < 0.5 then
+		-- 	lootdropper:AddChanceLoot("deerclops", 1)
+		-- else
+		-- 	for i = 1, 30 do
+		-- 		lootdropper:AddChanceLoot('cursed_monkey_token', 1)
+		-- 	end
+		-- 	lootdropper:AddChanceLoot('ironlord_death', 1)
+		-- end
+		lootdropper:AddChanceLoot("mutateddeerclops", 1)
+		lootdropper:AddChanceLoot("mutatedwarg", 1)
+		lootdropper:AddChanceLoot("mutatedbearger", 1)
 	end
 end
 
@@ -292,15 +296,15 @@ AddPrefabPostInit("stalker_atrium", function(inst)
 end)
 
 -- 普通巨鹿掉落10个诅咒饰品
-AddPrefabPostInit("deerclops", function(inst)
-	if not TheWorld.ismastersim then
-		return inst
-	end
+-- AddPrefabPostInit("deerclops", function(inst)
+-- 	if not TheWorld.ismastersim then
+-- 		return inst
+-- 	end
 
-	for i = 1, 10 do
-		inst.components.lootdropper:AddChanceLoot('cursed_monkey_token', 1)
-	end
-end)
+-- 	for i = 1, 10 do
+-- 		inst.components.lootdropper:AddChanceLoot('cursed_monkey_token', 1)
+-- 	end
+-- end)
 
 -- 鱼啦啦掉落12个敌对信号弹
 AddPrefabPostInit("mutateddeerclops", function(inst)
@@ -308,9 +312,25 @@ AddPrefabPostInit("mutateddeerclops", function(inst)
 		return inst
 	end
 
-	for i = 1, 12 do
-		inst.components.lootdropper:AddChanceLoot('megaflare', 1)
-		inst.components.lootdropper:AddChanceLoot('torch', 1)
+	local loot = {}
+
+	for i = 1, 3 do
+		table.insert(loot, { "wagpunk_floor_kit", 20 })
+	end
+	table.insert(loot, { "wagpunk_floor_kit", 16 })
+	table.insert(loot, { "gestalt_cage_filled1", 4 })
+	table.insert(loot, { "gestalt_cage_filled2", 2 })
+	table.insert(loot, { "bootleg", 3 })
+	table.insert(loot, { "boat_item", 1 })
+	table.insert(loot, { "featherpencil", 1 })
+	table.insert(loot, { "papyrus", 1 })
+
+	inst.components.lootdropper.loot = {}
+	for _, v in ipairs(loot) do
+		local prefab, count = v[1], v[2]
+		for i = 1, count do
+			table.insert(inst.components.lootdropper.loot, prefab)
+		end
 	end
 end)
 

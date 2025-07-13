@@ -75,7 +75,7 @@ local function DoCastSpell(inst, doer)
     local health = doer.components.health
     if health ~= nil and not health:IsDead() then
         doer.components.oldager:StopDamageOverTime()
-        health:DoDelta(-TUNING.POCKETWATCH_HEAL_HEALING * 2, true, inst.prefab)
+        health:DoDelta(-TUNING.POCKETWATCH_HEAL_HEALING * 1.5, true, inst.prefab)
 
         local fx = SpawnPrefab((doer.components.rider ~= nil and doer.components.rider:IsRiding()) and
             "pocketwatch_heal_fx_mount" or "pocketwatch_heal_fx")

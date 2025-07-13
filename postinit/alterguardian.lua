@@ -7,7 +7,7 @@ local function anticheating(inst)
 end
 
 local lunargazer_limit = 3
-local lunargazer_possibility = 0.1
+local lunargazer_possibility = 0.25
 
 local function TrySpawnLunarGrazer(inst, data)
     if data.victim and data.victim:IsValid() and data.victim.isplayer and lunargazer_limit > 0 and math.random() < lunargazer_possibility then
@@ -51,6 +51,7 @@ AddPrefabPostInit("lunarthrall_plant_vine_end", function(inst)
     if not TheWorld.ismastersim then
         return
     end
+    inst:AddTag("superplant")
     if inst.components.damagetyperesist == nil then
         inst:AddComponent("damagetyperesist")
     end
@@ -64,6 +65,7 @@ AddPrefabPostInit("lunarthrall_plant_vine", function(inst)
     if not TheWorld.ismastersim then
         return
     end
+    inst:AddTag("superplant")
     if inst.components.damagetyperesist == nil then
         inst:AddComponent("damagetyperesist")
     end

@@ -18,8 +18,8 @@ TUNING.WANDA_AGE_THRESHOLD_YOUNG = 2 / 3
 TUNING.WANDA_READING_SANITY_MULT = 3
 TUNING.WANDA_READ_PENALTY = 5
 
-TUNING.POCKETWATCH_HEAL_COOLDOWN = 60    --不老表CD减半
-TUNING.POCKETWATCH_RECALL_COOLDOWN = 240 --半天
+-- TUNING.POCKETWATCH_HEAL_COOLDOWN = 60    --不老表CD减半
+-- TUNING.POCKETWATCH_RECALL_COOLDOWN = 240 --半天
 
 -- 开局多送1个时间碎片
 table.insert(TUNING.GAMEMODE_STARTING_ITEMS.DEFAULT.WANDA, "pocketwatch_parts")
@@ -380,7 +380,7 @@ local function Heal_DoCastSpell(inst, doer)
 			doer._acidrain_immunity_task:Cancel()
 		end
 		doer.components.acidlevel:SetIgnoreAcidRainTicks(true)
-		doer._acidrain_immunity_task = doer:DoTaskInTime(10, function()
+		doer._acidrain_immunity_task = doer:DoTaskInTime(30, function()
 			if doer.components.acidlevel then
 				doer.components.acidlevel:SetIgnoreAcidRainTicks(false)
 			end
@@ -407,10 +407,14 @@ AddPrefabPostInit("pocketwatch_revive", function(inst)
 	if not TheWorld.ismastersim then
 		return
 	end
+	inst._break = 1
 	local function Revive_OnHaunt(inst, haunter)
 		inst.components.hauntable.hauntvalue = TUNING.HAUNT_SMALL
-		if haunter:HasTag("pocketwatchcaster") and inst.components.pocketwatch:CastSpell(haunter, haunter) then
-
+		if haunter:HasTag("pocketwatchcaster") and inst.components.pocketwatch:CastSpell(haunter, haunter) and inst._break % 2 == 0 then
+			inst.components.lootdropper:DropLoot()
+			SpawnPrefab("brokentool").Transform:SetPosition(inst.Transform:GetWorldPosition())
+			inst._break = inst._break + 1
+			inst:Remove() -- cannot withstand the paradox of being haunted by Wanda�s timeline
 		else
 			Launch(inst, haunter, TUNING.LAUNCH_SPEED_SMALL)
 		end
@@ -430,6 +434,7 @@ AddRecipePostInit("pocketwatch_recall", function(recipe)
 	recipe.builder_tag = "clockmaker"
 	recipe.no_deconstruction = pocketwatch_nodecon
 end)
+
 AddRecipePostInit("pocketwatch_portal", function(recipe)
 	recipe.level = TECH.SCIENCE_TWO
 end)

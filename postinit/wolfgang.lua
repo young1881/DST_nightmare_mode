@@ -57,7 +57,7 @@ end)
 --体型变化
 local function fat_gang(inst, data)
     local mig = 0
-    if inst.components.mightiness.current > 100 then --记录突破了多少肌肉值
+    if inst.components.mightiness and inst.components.mightiness.current > 100 then --记录突破了多少肌肉值
         mig = inst.components.mightiness.current - 100
     end
     if not inst:HasTag("GangYi") then --刚毅效果标签
@@ -131,12 +131,11 @@ AddPrefabPostInit("wolfgang", function(inst)
     inst:AddTag("wolfgang_overbuff_4")
     inst:AddTag("wolfgang_overbuff_5")
 
-    -- EvilState(inst)
-    -- if not TheWorld.ismastersim then
-    --     return inst
-    -- end
-    -- inst.Gangweile = true
-    -- inst.yongqi_gang = false
+    if not TheWorld.ismastersim then
+        return inst
+    end
+    inst.Gangweile = true
+    inst.yongqi_gang = false
 
 
     inst:DoTaskInTime(0, function()
@@ -341,7 +340,7 @@ local function NewOnPlayed(inst, doer)
             doer.yongqi_gang = true
             doer.components.sanity.neg_aura_mult = 0.25
             doer.components.eater:SetAbsorptionModifiers(1, 1, 0.5)
-            doer:DoTaskInTime(120, function()
+            doer:DoTaskInTime(90, function()
                 doer.yongqi_gang = false
                 if doer.components.sanity then
                     doer.components.sanity.neg_aura_mult = 1

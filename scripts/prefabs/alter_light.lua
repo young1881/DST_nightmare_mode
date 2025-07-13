@@ -64,9 +64,9 @@ local function DoDamag2(inst)
     for i, v in ipairs(ents) do
         if v:IsValid() and v.components.health ~= nil and not v.components.health:IsDead() then
             if v:HasTag("player") then
-                if v.components.sanity ~= nil then
-                    v.components.sanity:DoDelta(20)
-                end
+                -- if v.components.sanity ~= nil then
+                --     v.components.sanity:DoDelta(20)
+                -- end
 
                 if v.components.combat ~= nil then
                     v.components.combat:GetAttacked(inst, 50)

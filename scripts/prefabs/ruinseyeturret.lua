@@ -188,12 +188,12 @@ local states = {
     end,
 
     yellow = function(inst, target)
-        -- if target.isplayer then
-        --     target:ScreenFade(false)
-        --     target:ScreenFade(true, 8, false)
-        -- elseif target.components.hauntable ~= nil and target.components.hauntable.panicable then
-        --     target.components.hauntable:Panic(15)
-        -- end
+        if target.isplayer then
+            target:ScreenFade(false)
+            target:ScreenFade(true, 8, false)
+        elseif target.components.hauntable ~= nil and target.components.hauntable.panicable then
+            target.components.hauntable:Panic(15)
+        end
 
         local function SummonHolyLight(attacker, target, num, radius)
             if target and target:IsValid() then
@@ -418,8 +418,8 @@ local function CommonFn(types, aggro)
 
     inst:AddComponent("combat")
     inst.components.combat:SetRange(aggro and 16 or 14)
-    inst.components.combat:SetDefaultDamage(20)
-    inst.components.combat:SetAttackPeriod(5)
+    inst.components.combat:SetDefaultDamage(50)
+    inst.components.combat:SetAttackPeriod(3)
     inst.components.combat:SetRetargetFunction(1, retargetfn)
     inst.components.combat:SetKeepTargetFunction(shouldKeepTarget)
     inst.components.combat.onhitotherfn = gemmagic

@@ -285,10 +285,8 @@ AddStategraphPostInit("stalker_minion", function(sg)
     end
 end)
 
-AddPrefabPostInit("stalker_minion", function(inst)
-    if not TheWorld.ismastersim then
-        return
-    end
+local function AddStartAIFn(inst)
+    if not TheWorld.ismastersim then return end
 
     inst.start_ai_fn = function(monster)
         if monster:IsValid() then
@@ -304,7 +302,10 @@ AddPrefabPostInit("stalker_minion", function(inst)
                 monster.AnimState:SetAddColour(0, 0, 0, 0)
             end
         end
-
         monster:RemoveEventCallback("death", inst.start_ai_fn)
     end
-end)
+end
+
+AddPrefabPostInit("stalker_minion", AddStartAIFn)
+AddPrefabPostInit("stalker_minion1", AddStartAIFn)
+AddPrefabPostInit("stalker_minion2", AddStartAIFn)

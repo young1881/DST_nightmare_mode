@@ -19,7 +19,7 @@ local prefabs =
 local PocketWatchCommon = require "prefabs/pocketwatch_common"
 
 local excluded_tags = { "ai_stopped", "epic", "player", "abigail", "companion", "INLIMBO", "structure",
-    "butterfly", "wall", "balloon", "groundspike", "stalker_minion",
+    "butterfly", "wall", "balloon", "groundspike", "stalkerminion", "lightflier",
     "smashable" }
 
 local function HasExcludedTags(entity)

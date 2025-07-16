@@ -242,3 +242,69 @@ end)
 AddPrefabPostInit("shadowthrall_mouth", function(inst) --只因者的大小
     inst.Transform:SetScale(1.25, 1.25, 1.25)
 end)
+
+-- 修复虫子被无限吃
+AddStategraphPostInit("stalker_minion", function(sg)
+    for i, evt in ipairs(sg.events) do
+        if evt.name == "stalkerconsumed" then
+            sg.events[i] = EventHandler("stalkerconsumed", function(inst)
+                if not inst.sg:HasStateTag("dead") then
+                    if inst:HasTag("ai_stopped") then
+                        inst:RemoveTag("ai_stopped")
+                        if inst.start_ai_fn then
+                            inst.start_ai_fn(inst)
+                        elseif inst.RestartBrain then
+                            inst:RestartBrain()
+                        end
+                        if inst.AnimState then
+                            inst.AnimState:Resume()
+                            inst.AnimState:SetAddColour(0, 0, 0, 0)
+                        end
+                    end
+                    inst.sg:GoToState("death", "eaten")
+                end
+            end)
+            break
+        end
+    end
+
+
+    local death = sg.states["death"]
+    if death then
+        local old_onenter = death.onenter
+        death.onenter = function(inst, anim)
+            if old_onenter then
+                old_onenter(inst, anim)
+            end
+            inst:DoTaskInTime(0.5, function()
+                if inst:IsValid() then
+                    inst:Remove()
+                end
+            end)
+        end
+    end
+end)
+
+AddPrefabPostInit("stalker_minion", function(inst)
+    if not TheWorld.ismastersim then
+        return
+    end
+
+    inst.start_ai_fn = function(monster)
+        if monster:IsValid() then
+            monster:RestartBrain()
+            if monster.sg then
+                monster.sg:Start()
+            end
+            if monster.Physics then
+                monster.Physics:SetActive(true)
+            end
+            if monster.AnimState then
+                monster.AnimState:Resume()
+                monster.AnimState:SetAddColour(0, 0, 0, 0)
+            end
+        end
+
+        monster:RemoveEventCallback("death", inst.start_ai_fn)
+    end
+end)

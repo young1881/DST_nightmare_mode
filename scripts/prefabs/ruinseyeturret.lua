@@ -15,13 +15,14 @@ local prefabs =
 local brain = require "brains/eyeturretbrain"
 
 local GEMCOLOUR = {
-    red = { 1, 0, 0, 1 },
-    blue = { 0, 0, 1, 1 },
-    purple = { 128 / 255, 0, 128 / 255, 1 },
-    yellow = { 1, 1, 0, 1 },
-    orange = { 1, 165 / 255, 0, 1 },
-    green = { 0, 128 / 255, 0, 1 }
+    red    = { 255 / 255, 51 / 255, 51 / 255, 1 },
+    blue   = { 0 / 255, 0 / 255, 255 / 255, 1 },
+    purple = { 128 / 255, 0 / 255, 128 / 255, 1 },
+    yellow = { 255 / 255, 255 / 255, 100 / 255, 1 },
+    orange = { 255 / 255, 155 / 255, 26 / 255, 1 },
+    green  = { 0 / 255, 200 / 255, 0 / 255, 1 }
 }
+
 
 local function triggerlight(inst)
     if inst._lightframe ~= nil then
@@ -137,7 +138,7 @@ local states = {
         if center_spell.TriggerFX then
             center_spell:DoTaskInTime(8, center_spell.TriggerFX)
         end
-        center_spell:DoTaskInTime(10, center_spell.KillFX)
+        center_spell:DoTaskInTime(12, center_spell.KillFX)
     end,
 
     purple = function(inst, target, damageredirecttarget)
@@ -272,9 +273,12 @@ local states = {
                 end
             end
         end
+
         local x, y, z = target.Transform:GetWorldPosition()
+        -- inst:DoTaskInTime(1.5, function()
         local center_spell = SpawnPrefab("sporecloud")
         center_spell.Transform:SetPosition(x, 0, z)
+        -- end)
     end
 
 }
@@ -341,7 +345,13 @@ local function changegem(inst)
     local gem = inst.colours[inst.gemindex]
     inst.AnimState:SetMultColour(unpack(GEMCOLOUR[gem]))
     -- 更新灯光颜色
+    -- inst.Light:Enable(false)
+
+    -- inst.Light:SetRadius(3)    -- 设置光的半径
+    -- inst.Light:SetIntensity(1) -- 设置光的强度
+    -- inst.Light:SetFalloff(0.4) -- 设置光的衰减
     inst.Light:SetColour(unpack(GEMCOLOUR[gem]))
+    -- inst.Light:Enable(true)
 end
 
 local function onsave(inst, data)
@@ -386,12 +396,13 @@ local function CommonFn(types, aggro)
     inst.AnimState:PlayAnimation("idle_loop")
 
     -- 初始化灯光效果
-    inst.Light:SetRadius(3.5)                         -- 设置光的半径
-    inst.Light:SetIntensity(0.95)                     -- 设置光的强度
-    inst.Light:SetFalloff(0.5)                        -- 设置光的衰减
-    inst.Light:SetColour(unpack(GEMCOLOUR[types[1]])) -- 初始灯光颜色为第一个宝石颜色
-    inst.Light:Enable(true)                           -- 启用发光效果
-    inst.Light:EnableClientModulation(true)           -- 启用客户端光效调节
+    inst.Light:SetRadius(0.8)        -- 设置光的半径
+    inst.Light:SetIntensity(0.3)     -- 设置光的强度
+    inst.Light:SetFalloff(0.4)       -- 设置光的衰减
+    inst.Light:SetColour(60, 60, 60) -- 初始灯光颜色为第一个宝石颜色
+    -- inst.Light:SetColour(unpack(GEMCOLOUR[types[1]]))
+    inst.Light:Enable(true)          -- 启用发光效果
+    -- inst.Light:EnableClientModulation(true) -- 启用客户端光效调节
 
     inst.entity:SetPristine()
 

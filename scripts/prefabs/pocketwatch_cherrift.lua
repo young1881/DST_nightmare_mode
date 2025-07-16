@@ -54,11 +54,16 @@ local function stop_ai(monster)
         return
     end
 
+    if monster.sg ~= nil and monster.sg:HasStateTag("dead") then
+        return
+    end
+
     monster:StopBrain()
     if monster.sg then
         monster.sg:Stop()
     end
     if monster.Physics then
+        monster.Physics:ClearMotorVelOverride()
         monster.Physics:Stop()
         monster.Physics:SetActive(false)
     end
@@ -69,6 +74,7 @@ local function stop_ai(monster)
 
     monster:ListenForEvent("death", function() start_ai(monster) end)
 end
+
 
 
 local function DoCastSpell(inst, doer)

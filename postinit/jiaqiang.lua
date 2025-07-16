@@ -374,3 +374,53 @@ TUNING.SKILLS.WENDY.LUNARELIXIR_DAMAGEBONUS = 12              -- abigail 的位�
 TUNING.SKILLS.WENDY.LUNARELIXIR_DURATION = 2000000            -- 光之怒的持续时间
 -- TUNING.LUNARTHRALL_PLANT_DAMAGE = 220                         --反击伤害
 -- TUNING.LUNARTHRALL_PLANT_PLANAR_DAMAGE = 35                   --反击的位面
+
+AddPrefabPostInit("sporecloud", function(inst)
+	if not TheWorld.ismastersim then
+		return
+	end
+
+	inst.AnimState:SetDeltaTimeMultiplier(0.75)
+
+	if inst.components.aura then
+		inst.components.aura:Enable(false)
+	end
+
+	if inst._spoiltask ~= nil then
+		inst._spoiltask:Cancel()
+		inst._spoiltask = nil
+	end
+
+
+	local delay = 1.5
+	inst:DoTaskInTime(delay, function()
+		inst.AnimState:SetDeltaTimeMultiplier(1)
+		if inst.components.aura then
+			inst.components.aura:Enable(true)
+		end
+		if inst._spoiltask == nil then
+			local tick = inst.components.aura and inst.components.aura.tickperiod or 1
+			inst._spoiltask = inst:DoPeriodicTask(tick, function()
+				local x, y, z = inst.Transform:GetWorldPosition()
+				local ents = TheSim:FindEntities(x, y, z, inst.components.aura.radius, nil,
+					{ "small_livestock" },
+					{ "fresh", "stale", "spoiled" })
+				for i, v in ipairs(ents) do
+					if v.components.perishable then
+						local item = v
+						if item:IsInLimbo() then
+							local owner = item.components.inventoryitem and item.components.inventoryitem.owner or nil
+							if owner == nil or
+								(owner.components.container and not owner.components.container:IsOpen() and
+									owner:HasOneOfTags({ "structure", "portablestorage" }))
+							then
+								return
+							end
+						end
+						item.components.perishable:ReducePercent(TUNING.TOADSTOOL_SPORECLOUD_ROT)
+					end
+				end
+			end, tick * 0.5)
+		end
+	end)
+end)

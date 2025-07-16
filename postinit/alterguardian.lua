@@ -489,7 +489,7 @@ AddPrefabPostInit("alterguardian_phase2", function(inst)
     if inst.components.damagetyperesist == nil then
         inst:AddComponent("damagetyperesist")
     end
-    inst.components.combat:AddNoAggroTag("lunarthrall_plant")
+    inst.components.combat:AddNoAggroTag("superplant")
     inst.components.damagetyperesist:AddResist("lunarthrall_plant", inst, 0)
 end)
 
@@ -1033,7 +1033,7 @@ AddPrefabPostInit("alterguardian_phase3", function(inst)
     if inst.components.damagetyperesist == nil then
         inst:AddComponent("damagetyperesist")
     end
-    inst.components.combat:AddNoAggroTag("lunarthrall_plant")
+    inst.components.combat:AddNoAggroTag("superplant")
     inst.components.damagetyperesist:AddResist("lunarthrall_plant", inst, 0)
 end)
 

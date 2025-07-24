@@ -31,7 +31,7 @@ local function HasExcludedTags(entity)
     return false
 end
 
-local function start_ai(monster)
+local function start_ai(monster) 
     if monster:IsValid() then
         monster:RestartBrain()
         if monster.sg then

@@ -1,3 +1,5 @@
+TUNING.BEAVER_ABSORPTION = 0.9
+
 local wudi_duration = 0.6   --无敌盾持续时间
 local cooldown_duration = 4 --这段时间内无敌盾不会重复触发
 

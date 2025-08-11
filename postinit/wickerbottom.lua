@@ -47,7 +47,7 @@ local books = {
     {
         -- 本草纲目
         name = "mb_book_bcgm",
-        makings = { Ingredient("papyrus", 2), Ingredient("jellybean", 6), Ingredient("coin_1", 1) }
+        makings = { Ingredient("papyrus", 2), Ingredient("royal_jelly", 2), Ingredient("coin_1", 1) }
     },
 }
 
@@ -72,45 +72,118 @@ AddPrefabPostInit("beeguard", function(inst)
     inst:AddTag("crazy") -- 打影怪的标签
 end)
 
--- local function postinitfn(inst)
--- 	if not TheWorld.ismastersim then
--- 		return inst
--- 	end
+local PI2 = 2 * math.pi
+local BEES_MUST_TAGS = { "beeguard" }
 
--- 	inst.swap_build = "book_bees"
+AddPrefabPostInit("book_bees", function(inst)
+    if not TheWorld.ismastersim then
+        return
+    end
 
--- 	inst:AddComponent("inspectable")
--- 	inst.components.inspectable.getstatus = GetStatus
+    if not inst.SoundEmitter then
+        inst.entity:AddSoundEmitter()
+    end
 
--- 	inst:AddComponent("inventoryitem")
+    if inst.components.finiteuses then
+        inst:RemoveComponent("finiteuses")
+    end
 
--- 	inst:AddComponent("fueled")  --耐久修复组件
--- 	inst.components.fueled.accepting = true
--- 	inst.components.fueled.fueltype = FUELTYPE.NIGHTMARE
--- 	inst.components.fueled:SetTakeFuelFn(OnTakeFuel)
--- 	inst.components.fueled:SetDepletedFn(OnFuelDepleted)
--- 	inst.components.fueled:InitializeFuelLevel(TUNING.LARGE_FUEL * 4)  
+    if not inst.components.fueled then
+        inst:AddComponent("fueled")
+    end
 
--- 	inst:AddComponent("fuel")
--- 	inst.components.fuel.fuelvalue = TUNING.MED_FUEL
+    local fueled = inst.components.fueled
+    inst.components.fueled.accepting = true
+    inst.components.fueled.fueltype = FUELTYPE.NIGHTMARE
+    inst.components.fueled:InitializeFuelLevel(TUNING.LARGE_FUEL * 4)
 
--- 	inst:AddComponent("aoespell")
+    fueled:SetDepletedFn(function(inst)
+        inst.AnimState:SetMultColour(0.4, 0.4, 0.4, 1)
+    end)
 
--- 	MakeSmallBurnable(inst, TUNING.MED_BURNTIME)
--- 	MakeSmallPropagator(inst)
+    fueled:SetTakeFuelFn(function(inst)
+        inst.AnimState:SetMultColour(1, 1, 1, 1)
+        if inst.SoundEmitter then
+            inst.SoundEmitter:PlaySound("dontstarve/common/nightmareAddFuel")
+        end
+    end)
 
--- 	inst:AddComponent("hauntable")
--- 	inst.components.hauntable.cooldown = TUNING.HAUNT_COOLDOWN_SMALL
--- 	inst.components.hauntable:SetOnHauntFn(OnHaunt)
+    local function book_bees_fn(inst, reader)
+        reader:MakeGenericCommander()
 
--- 	inst._activetask = nil
--- 	inst._soundtasks = {}
--- 	inst:ListenForEvent("onputininventory", topocket)
--- 	inst:ListenForEvent("ondropped", toground)
--- 	inst.OnEntitySleep = OnEntitySleep
--- 	inst.OnEntityWake = OnEntityWake
+        local beescount = TUNING.BOOK_BEES_AMOUNT
+
+        if reader.components.commander:GetNumSoldiers("beeguard") + beescount > TUNING.BOOK_MAX_GRUMBLE_BEES then
+            return false, "TOOMANYBEES"
+        end
+
+        local x, y, z = reader.Transform:GetWorldPosition()
+
+        local radius = TUNING.BEEGUARD_GUARD_RANGE * 0.5
+        local delta_theta = PI2 / beescount
+
+        for i = 1, beescount do
+            reader:DoTaskInTime(i * 0.075, function()
+                local pos_x, pos_y, pos_z = x + radius * math.cos((i - 1) * delta_theta), 0,
+                    z + radius * math.sin((i - 1) * delta_theta)
+
+                reader:DoTaskInTime(0.1 * i, function()
+                    local fx = SpawnPrefab("fx_book_bees")
+                    fx.Transform:SetPosition(pos_x, pos_y, pos_z)
+                end)
+
+                reader:DoTaskInTime(0.15 * i, function()
+                    local queen = TheSim:FindEntities(x, y, z, 16, BEES_MUST_TAGS)[1] or nil
+
+                    local bee = SpawnPrefab("beeguard")
+                    bee.Transform:SetPosition(pos_x, pos_y, pos_z)
+                    bee:AddToArmy(queen or reader)
+                    bee.summoned_by_book = true -- 标记召唤的bee
+
+                    SpawnPrefab("bee_poof_big").Transform:SetPosition(pos_x, pos_y, pos_z)
+                end)
+            end)
+        end
+
+        return true
+    end
+
+    local function onread_wrapper(inst, reader)
+        if fueled:IsEmpty() then
+            if reader.components.talker then
+                reader.components.talker:Say("这本书已经没有噩梦燃料了！")
+            end
+            return false, "NOFUEL"
+        end
+
+        fueled:DoDelta(-TUNING.LARGE_FUEL)
+        return book_bees_fn(inst, reader)
+    end
+
+    if inst.components.book then
+        inst.components.book:SetOnRead(onread_wrapper)
+    end
+
+    if inst.components.finiteuses and inst.components.finiteuses.SetOnFinished then
+        inst.components.finiteuses:SetOnFinished(nil)
+    end
+end)
 
 
--- end
+AddPrefabPostInit("beeguard", function(inst)
+    if not TheWorld.ismastersim then
+        return inst
+    end
 
--- AddPrefabPostInit("book_bees", postinitfn)
+    inst:ListenForEvent("death", function(beeguard_inst)
+        local lootdropper = beeguard_inst.components.lootdropper
+        if lootdropper then
+            lootdropper:SetLoot({})
+            if beeguard_inst.summoned_by_book then
+                lootdropper:AddChanceLoot("royal_jelly", 0.10)
+            else
+                lootdropper:AddChanceLoot("royal_jelly", 0.01)
+            end
+        end
+    end)
+end)

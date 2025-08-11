@@ -87,3 +87,34 @@ AddPrefabPostInit("waxwell", function(inst)
         end
     end)
 end)
+
+AddPrefabPostInit("waxwell", function(inst)
+    if not GLOBAL.TheWorld.ismastersim then return end
+
+    inst:DoPeriodicTask(1, function()
+        if inst:HasTag("playerghost") then
+            inst:RemoveTag("Puren")
+            return
+        end
+        if inst.components.leader and inst.components.leader:CountFollowers("shadowminion") > 0 then
+            inst:AddTag("Puren")
+        else
+            inst:RemoveTag("Puren")
+        end
+    end)
+end)
+
+
+AddPrefabPostInit("shadowworker", function(inst)
+    if not GLOBAL.TheWorld.ismastersim then
+        return
+    end
+
+    if inst.components.workmultiplier == nil then
+        inst:AddComponent("workmultiplier")
+    end
+
+    inst.components.workmultiplier:AddMultiplier(GLOBAL.ACTIONS.CHOP, 2, inst)
+    inst.components.workmultiplier:AddMultiplier(GLOBAL.ACTIONS.MINE, 2, inst)
+    -- inst.components.workmultiplier:AddMultiplier(GLOBAL.ACTIONS.DIG, 2, inst)
+end)

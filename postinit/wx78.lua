@@ -1,18 +1,27 @@
--- STRINGS.RECIPE_DESC.WX78MODULE_MAXHEALTH = "扫描蜘蛛解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_MAXHEALTH2 = "扫描蜘蛛战士、喷吐蜘蛛、穴居蜘蛛、洞穴蜘蛛解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_MAXSANITY1 = "扫描蝴蝶或月娥解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_MAXSANITY = "扫描各类影怪解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_BEE = "扫描蜂王解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_MUSIC = "扫描水獭掠夺者、寄居蟹、帝王蟹解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_MAXHUNGER1 = "扫描猎狗解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_MAXHUNGER = "扫描熊獾、啜食者解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_MOVESPEED = "扫描兔子、兔人解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_MOVESPEED2 = "扫描发条战车、损坏的发条战车或远古守护者解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_HEAT = "扫描红色猎犬、龙蝇解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_COLD = "扫描蓝色猎犬、独眼巨鹿解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_TASER = "扫描伏特羊解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_NIGHTVISION = "扫描鼹鼠、洞穴蠕虫解锁"
--- STRINGS.RECIPE_DESC.WX78MODULE_LIGHT = "扫描鱿鱼、球状光虫解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_MAXHEALTH = "扫描蜘蛛解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_MAXHEALTH2 = "扫描蜘蛛战士、喷吐蜘蛛、穴居蜘蛛、洞穴蜘蛛解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_MAXSANITY1 = "扫描蝴蝶或月娥解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_MAXSANITY = "扫描各类影怪解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_BEE = "扫描蜂王解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_MUSIC = "扫描水獭掠夺者、寄居蟹、帝王蟹解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_MAXHUNGER1 = "扫描猎狗解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_MAXHUNGER = "扫描熊獾、啜食者解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_MOVESPEED = "扫描兔子、兔人解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_MOVESPEED2 = "扫描发条战车、损坏的发条战车或远古守护者解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_HEAT = "扫描红色猎犬、龙蝇解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_COLD = "扫描蓝色猎犬、独眼巨鹿解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_TASER = "扫描伏特羊解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_NIGHTVISION = "扫描鼹鼠、洞穴蠕虫解锁"
+STRINGS.RECIPE_DESC.WX78MODULE_LIGHT = "扫描鱿鱼、球状光虫解锁"
+
+local wx78_moduledefs = require("wx78_moduledefs")
+local AddCreatureScanDataDefinition = wx78_moduledefs.AddCreatureScanDataDefinition
+AddCreatureScanDataDefinition("bunnyman", "movespeed", 2)
+AddCreatureScanDataDefinition("worm", "nightvision", 4)
+AddCreatureScanDataDefinition("spider_dropper", "maxhealth2", 4)
+AddCreatureScanDataDefinition("spider_hider", "maxhealth2", 4)
+AddCreatureScanDataDefinition("spider_spitter", "maxhealth2", 4)
+AddCreatureScanDataDefinition("spider_warrior", "maxhealth2", 4)
 
 AddRecipe2("wx78module_nightvision",
     { Ingredient("scandata", 4), Ingredient("wormlight", 2), Ingredient("lightbulb", 10) },
@@ -176,6 +185,16 @@ local function OnBecameRobot(inst)
     end
 end
 
+local function OnFrozen(inst)
+    if inst.components.freezable == nil or not inst.components.freezable:IsFrozen() then
+        SpawnPrefab("wx78_big_spark"):AlignToTarget(inst)
+
+        if not inst.components.upgrademoduleowner:IsChargeEmpty() then
+            inst.components.upgrademoduleowner:AddCharge(-TUNING.WX78_FROZEN_CHARGELOSS)
+        end
+    end
+end
+
 local function StartMoistureImmunity(inst)
     if inst._moisture_task then
         inst._moisture_task:Cancel()
@@ -186,7 +205,7 @@ local function StartMoistureImmunity(inst)
     end
 
     inst._moisture_immunity_remover = function()
-        if inst._is_setting_moisture then return end -- 防止递归调用
+        if inst._is_setting_moisture then return end
 
         inst._is_setting_moisture = true
         if inst.components.moisture then
@@ -198,6 +217,9 @@ local function StartMoistureImmunity(inst)
     -- 初始清除一次湿度
     inst._moisture_immunity_remover()
     inst:ListenForEvent("moisturedelta", inst._moisture_immunity_remover)
+    if inst.components.freezable ~= nil then
+        inst.components.freezable.onfreezefn = nil
+    end
 
     inst._moisture_task = inst:DoPeriodicTask(10, function()
         if inst._is_setting_moisture then return end
@@ -219,6 +241,10 @@ local function StartMoistureImmunity(inst)
             inst._moisture_immunity_remover = nil
         end
         inst._is_setting_moisture = nil
+
+        if inst.components.freezable ~= nil then
+            inst.components.freezable.onfreezefn = OnFrozen
+        end
 
         inst.components.talker:Say("潮湿缓冲结束")
     end)

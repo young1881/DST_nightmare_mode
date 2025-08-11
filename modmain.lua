@@ -45,6 +45,10 @@ PrefabFiles = {
 	"mandrakehouse",
 	"dumbbells",
 	"lunarthrall_plant",
+	"wortox_soul_heal_fx",
+	"wortox_soul_in_fx",
+	"wortox_soul_spawn",
+	"wortox_soul",
 
 	-- 天体相关
 	"lava_sinkhole",
@@ -154,6 +158,8 @@ modimport("postinit/standardcomponents.lua") --前置功能
 modimport("postinit/peifang.lua")            --配方
 modimport("postinit/diaoluo.lua")            --掉落加强
 modimport("postinit/jiaqiang.lua")           --位面加强和相关数值
+modimport("postinit/electrocute")            --电击相关改动
+modimport("postinit/curse")
 
 -- boss相关
 modimport("postinit/truedamage_system.lua")
@@ -184,6 +190,7 @@ modimport("postinit/woodie.lua")       --伍迪
 modimport("postinit/wes.lua")          --维斯
 modimport("postinit/wx78.lua")         --机器人
 modimport("postinit/wilson.lua")       --vd
+modimport("postinit/wortox.lua")
 
 -- 其他
 modimport("postinit/raterate.lua")                   --快速训牛

@@ -438,3 +438,10 @@ end)
 AddRecipePostInit("pocketwatch_portal", function(recipe)
 	recipe.level = TECH.SCIENCE_TWO
 end)
+
+AddPrefabPostInit("shadowthrall_mouth", function(inst)
+	if not TheWorld.ismastersim then
+		return
+	end
+	inst:AddTag("ai_stopped")
+end)

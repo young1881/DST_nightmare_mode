@@ -21,7 +21,7 @@ TUNING.ALTERGUARDIAN_PHASE2_SPIN_RANGE = 50
 
 --3阶段
 TUNING.ALTERGUARDIAN_PHASE3_STARTHEALTH = 100000     --血量
-TUNING.ALTERGUARDIAN_PHASE3_ATTACK_PERIOD = 2.5     --攻击间隔
+TUNING.ALTERGUARDIAN_PHASE3_ATTACK_PERIOD = 2.5      --攻击间隔
 TUNING.ALTERGUARDIAN_PHASE3_TRAP_CD = 15             --陷阱CD
 TUNING.ALTERGUARDIAN_PHASE3_SUMMONCOOLDOWN = 25      --召唤CD
 TUNING.ALTERGUARDIAN_PHASE3_DAMAGE = 320             --攻击力
@@ -203,7 +203,8 @@ ListOfBoss2            = {
 	"antlion",     --蚁狮
 	"toadstool",   --蛤蟆
 	"shadowdragon", --恐惧之龙
-	"ironlord"     --附身铠甲
+	"ironlord",    --附身铠甲
+	"worm_boss"
 }
 for k, v in pairs(ListOfBoss2) do
 	AddPrefabPostInit(v, function(inst)
@@ -424,3 +425,5 @@ AddPrefabPostInit("sporecloud", function(inst)
 		end
 	end)
 end)
+
+

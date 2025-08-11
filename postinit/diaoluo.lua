@@ -1,38 +1,97 @@
---月鹿
+local function LootSetupFn_warg(lootdropper)
+	local loot = {
+		"spoiled_food",
+		"spoiled_food",
+		"spoiled_food",
+		"purebrilliance",
+		"purebrilliance",
+		"chesspiece_warg_mutated_sketch",
+		"lunarplant_husk",
+		"lunarplant_husk",
+		"lunarplant_husk",
+		"purebrilliance",
+		"purebrilliance",
+	}
+	lootdropper:SetLoot(loot)
+end
+
+local function LootSetupFn_bearger(lootdropper)
+	local loot = {
+		"spoiled_food",
+		"spoiled_food",
+		"spoiled_food",
+		"spoiled_food",
+		"purebrilliance",
+		"purebrilliance",
+		"chesspiece_bearger_mutated_sketch",
+		"security_pulse_cage",
+		"lunarplant_husk",
+		"lunarplant_husk",
+		"lunarplant_husk",
+	}
+	lootdropper:SetLoot(loot)
+end
+
+AddPrefabPostInit("mutatedwarg", function(inst)
+	if not TheWorld.ismastersim then return end
+
+	inst.components.lootdropper:SetLootSetupFn(LootSetupFn_warg)
+end)
+
+AddPrefabPostInit("mutatedbearger", function(inst)
+	if not TheWorld.ismastersim then return end
+
+	inst.components.lootdropper:SetLootSetupFn(LootSetupFn_bearger)
+end)
+
 AddPrefabPostInit("mutateddeerclops", function(inst)
 	if not TheWorld.ismastersim then
 		return inst
 	end
 
-	inst.components.lootdropper:AddChanceLoot('lunarplant_husk', 1)
-	inst.components.lootdropper:AddChanceLoot('lunarplant_husk', 1)
-	inst.components.lootdropper:AddChanceLoot('lunarplant_husk', 1)
-end)
-
---月狼
-AddPrefabPostInit("mutatedwarg", function(inst)
-	if not TheWorld.ismastersim then
-		return inst
+	local function MyLootSetupFn_deerclops(lootdropper)
+		local loot = {
+			"spoiled_food",
+			"spoiled_food",
+			"spoiled_food",
+			"spoiled_food",
+			"purebrilliance",
+			"purebrilliance",
+			"ice",
+			"ice",
+			"chesspiece_deerclops_mutated_sketch",
+			"lunarplant_husk",
+			"lunarplant_husk",
+			"lunarplant_husk",
+		}
+		lootdropper:SetLoot(loot)
 	end
 
-	inst.components.lootdropper:AddChanceLoot('lunarplant_husk', 1)
-	inst.components.lootdropper:AddChanceLoot('lunarplant_husk', 1)
-	inst.components.lootdropper:AddChanceLoot('lunarplant_husk', 1)
-	inst.components.lootdropper:AddChanceLoot('purebrilliance', 1)
-	inst.components.lootdropper:AddChanceLoot('purebrilliance', 1)
-end)
+	inst.components.lootdropper:SetLootSetupFn(MyLootSetupFn_deerclops)
 
---月熊
-AddPrefabPostInit("mutatedbearger", function(inst)
-	if not TheWorld.ismastersim then
-		return inst
+	local extra_loot = {
+		{ "wagpunk_floor_kit",    20 },
+		{ "wagpunk_floor_kit",    20 },
+		{ "wagpunk_floor_kit",    20 },
+		{ "wagpunk_floor_kit",    16 },
+		{ "gestalt_cage_filled1", 4 },
+		{ "gestalt_cage_filled2", 2 },
+		{ "bootleg",              3 },
+		{ "boat_item",            1 },
+		{ "featherpencil",        1 },
+		{ "papyrus",              1 },
+	}
+
+	inst.components.lootdropper.loot = {}
+
+	for _, v in ipairs(extra_loot) do
+		local prefab, count = v[1], v[2]
+		for i = 1, count do
+			table.insert(inst.components.lootdropper.loot, prefab)
+		end
 	end
-
-	inst.components.lootdropper:AddChanceLoot('security_pulse_cage', 1) --火花柜
-	inst.components.lootdropper:AddChanceLoot('lunarplant_husk', 1)
-	inst.components.lootdropper:AddChanceLoot('lunarplant_husk', 1)
-	inst.components.lootdropper:AddChanceLoot('lunarplant_husk', 1)
 end)
+
 
 --海象
 AddPrefabPostInit("walrus", function(inst)
@@ -305,34 +364,6 @@ end)
 -- 		inst.components.lootdropper:AddChanceLoot('cursed_monkey_token', 1)
 -- 	end
 -- end)
-
--- 鱼啦啦掉落12个敌对信号弹
-AddPrefabPostInit("mutateddeerclops", function(inst)
-	if not TheWorld.ismastersim then
-		return inst
-	end
-
-	local loot = {}
-
-	for i = 1, 3 do
-		table.insert(loot, { "wagpunk_floor_kit", 20 })
-	end
-	table.insert(loot, { "wagpunk_floor_kit", 16 })
-	table.insert(loot, { "gestalt_cage_filled1", 4 })
-	table.insert(loot, { "gestalt_cage_filled2", 2 })
-	table.insert(loot, { "bootleg", 3 })
-	table.insert(loot, { "boat_item", 1 })
-	table.insert(loot, { "featherpencil", 1 })
-	table.insert(loot, { "papyrus", 1 })
-
-	inst.components.lootdropper.loot = {}
-	for _, v in ipairs(loot) do
-		local prefab, count = v[1], v[2]
-		for i = 1, count do
-			table.insert(inst.components.lootdropper.loot, prefab)
-		end
-	end
-end)
 
 --鲨鱼
 AddPrefabPostInit("shark", function(inst)

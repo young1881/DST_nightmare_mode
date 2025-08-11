@@ -2,17 +2,17 @@ TUNING.CHARLIE_STAGE_RESET_TIME = 480
 TUNING.CHARLIE_STAGE_RESET_TIME_VARIABLE = 480
 
 local REWARDPOOL = {
-    { name = "miner",       "goldenpickaxe",             "minerhat",                 "lantern" },
-    { name = "farmer",      "premiumwateringcan",        "golden_farm_hoe",          "farm_plow_item" },
-    { name = "fisher",      "oceanfishingrod",           "oceanfishingbobber_ball",  "oceanfishinglure_hermit_heavy" },
-    { name = "hiker",       "goldenaxe",                 "backpack",                 "goldenshovel" },
-    { name = "hunter",      "hambat",                    "armorwood",                "footballhat" },
-    { name = "weather",     "yellowstaff",               "meat_dried",               "umbrella" },
-    { name = "tailor",      "tophat",                    "sewing_kit",               "spidereggsack" },
-    { name = "winter",      "heatrock",                  "cane",                     "walrushat" },
-    { name = "builder", "turf_ruinsbrick_blueprint", "turf_ruinstrim_blueprint", "turf_cotl_gold_blueprint" },
-    { name = "loser",       "winter_food4",              "trinket_24",               "trinket_35" },
-    { name = "chessser",    "trinket_15",                "trinket_28",               "trinket_30" }
+    { name = "miner",    "goldenpickaxe",             "minerhat",                 "lantern" },
+    { name = "farmer",   "premiumwateringcan",        "golden_farm_hoe",          "farm_plow_item" },
+    { name = "fisher",   "oceanfishingrod",           "oceanfishingbobber_ball",  "oceanfishinglure_hermit_heavy" },
+    { name = "hiker",    "goldenaxe",                 "backpack",                 "goldenshovel" },
+    { name = "hunter",   "hambat",                    "armorwood",                "footballhat" },
+    { name = "weather",  "yellowstaff",               "meat_dried",               "umbrella" },
+    { name = "tailor",   "tophat",                    "sewing_kit",               "spidereggsack" },
+    { name = "winter",   "heatrock",                  "cane",                     "walrushat" },
+    { name = "builder",  "turf_ruinsbrick_blueprint", "turf_ruinstrim_blueprint", "turf_cotl_gold_blueprint" },
+    { name = "loser",    "winter_food4",              "trinket_24",               "trinket_35" },
+    { name = "chessser", "trinket_15",                "trinket_28",               "trinket_30" }
 }
 
 local function OnPlayPerformed(inst, data)

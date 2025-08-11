@@ -136,7 +136,7 @@ local states = {
         local center_spell = SpawnPrefab("deer_ice_circle")
         center_spell.Transform:SetPosition(x, 0, z)
         if center_spell.TriggerFX then
-            center_spell:DoTaskInTime(8, center_spell.TriggerFX)
+            center_spell:DoTaskInTime(6, center_spell.TriggerFX)
         end
         center_spell:DoTaskInTime(12, center_spell.KillFX)
     end,
@@ -390,6 +390,7 @@ local function CommonFn(types, aggro)
     inst:AddTag("laser_immune")
     inst:AddTag("cavedweller")
     inst:AddTag("ignore_holy_damage")
+    inst:AddTag("electricdamageimmune")
 
     inst.AnimState:SetBank("eyeball_turret")
     inst.AnimState:SetBuild("eyeball_turret")

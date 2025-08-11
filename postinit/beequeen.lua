@@ -93,12 +93,3 @@ AddPrefabPostInit("beequeen", function(inst)
     inst.components.lootdropper:AddChanceLoot('moose', 1)
     inst.components.lootdropper:AddChanceLoot("hivehat_blueprint", 1)
 end)
-
--- 小蜜蜂掉落蜂王浆
-AddPrefabPostInit("beeguard", function(inst)
-    if not TheWorld.ismastersim then
-        return inst
-    end
-
-    inst.components.lootdropper:AddChanceLoot('royal_jelly', 0.01)
-end)

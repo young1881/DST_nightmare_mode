@@ -8,17 +8,28 @@ local function taser_apply_damage(attacker, wx, damage_mult, interval, count)
     if count <= 0 or attacker == nil or not attacker:IsValid() then
         return
     end
+    if wx == nil or not wx:IsValid() then
+        return
+    end
 
-    SpawnPrefab("electrichitsparks"):AlignToTarget(attacker, wx, true)
+    local sparks = SpawnPrefab("electrichitsparks")
+    if sparks ~= nil and sparks.AlignToTarget then
+        sparks:AlignToTarget(attacker, wx, true)
+    end
+
     local base_damage = damage_mult * TUNING.WX78_TASERDAMAGE
     local planar_damage = 10
     local spdamage = { planar = planar_damage }
 
-    attacker.components.combat:GetAttacked(wx, base_damage, nil, "electric", spdamage)
+    if attacker.components.combat ~= nil then
+        attacker.components.combat:GetAttacked(wx, base_damage, nil, "electric", spdamage)
+    end
+
     attacker:DoTaskInTime(interval, function()
         taser_apply_damage(attacker, wx, damage_mult, interval, count - 1)
     end)
 end
+
 
 local excluded_tags = { "ai_stopped", "epic", "player", "abigail", "companion", "INLIMBO", "structure",
     "butterfly", "wall", "balloon", "groundspike", "stalkerminion",

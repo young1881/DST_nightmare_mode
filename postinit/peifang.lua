@@ -181,8 +181,8 @@ AddRecipe2("spoiled_food_bunch",
 STRINGS.RECIPE_DESC.SPOILED_FOOD_BUNCH = "人人都可以是腐烂仙人！"
 
 -- 晾肉架配方调整
-Recipe2("meatrack", { Ingredient("twigs", 5), Ingredient("charcoal", 3), Ingredient("rope", 1) }, TECH.SCIENCE_ONE,
-    { placer = "meatrack_placer" }, { "COOKING" })
+-- Recipe2("meatrack", { Ingredient("twigs", 5), Ingredient("charcoal", 3), Ingredient("rope", 1) }, TECH.SCIENCE_ONE,
+--     { placer = "meatrack_placer" }, { "COOKING" })
 
 --铥棒修改
 AddRecipePostInit("ruins_bat", function(self)
@@ -192,7 +192,7 @@ end)
 
 -- 枕头
 AddRecipe2("handpillow_steelwool",
-    { Ingredient("carrot", 8), Ingredient("manrabbit_tail", 10), Ingredient("steelwool", 2) },
+    { Ingredient("panflute", 1), Ingredient("rabbit", 4) },
     TECH.RABBITKINGSHOP_TWO, { nounlock = true, sg_state = "give", product = "handpillow_steelwool" })
 
 --附身铠甲召唤
@@ -256,15 +256,16 @@ AddRecipe2("pocketwatch_weapon2",
     { "CHARACTER" })
 STRINGS.RECIPE_DESC.POCKETWATCH_WEAPON2 = "暗影秘典的力量成功复制了这件完美的艺术品"
 
---养蜂笔记
-AddRecipe2("book_bees",
-    { Ingredient("papyrus", 2), Ingredient("slurper_pelt", 4), Ingredient("fossil_piece", 2), Ingredient(
-        "slurtle_shellpieces", 3) }, TECH.NONE_TWO, nil,
-    { builder_tag = "bookbuilder" }, { "CHARACTER" })
+-- --养蜂笔记
+-- AddRecipe2("book_bees",
+--     { Ingredient("papyrus", 2), Ingredient("slurper_pelt", 4), Ingredient("fossil_piece", 2), Ingredient(
+--         "slurtle_shellpieces", 3) }, nil,
+--     { builder_tag = "bookbuilder" }, { "CHARACTER" })
 
 -- 养蜂笔记修复
 AddRecipe2("book_bees2",
-    { Ingredient("book_bees", 1), Ingredient("nightmarefuel", 7) }, TECH.SCIENCE_ONE,
+    { Ingredient("papyrus", 2), Ingredient("slurper_pelt", 4), Ingredient("fossil_piece", 2), Ingredient(
+        "slurtle_shellpieces", 3) }, TECH.NONE_TWO,
     {
         product = "book_bees",
         image = "book_bees.tex",
@@ -309,4 +310,34 @@ Recipe2("ghostlyelixir_lunar",
     { Ingredient("thulecite_pieces", 6), Ingredient("purebrilliance", 2), Ingredient("ghostflower", 5) }, TECH.NONE_TWO,
     { builder_tag = "ghostlyfriend" }, { "CHARACTER" })
 
-    
+
+local function livinglog_numtogive(recipe, doer)
+    local total = 1
+    if math.random() < 0.4 then
+        total = total + 1
+    end
+    if math.random() < 0.1 then
+        total = total + 1
+    end
+    if total > 2 then
+        doer.SoundEmitter:PlaySound("meta5/wendy/elixir_bonus_2")
+        doer.components.talker:Say("更多的朋友给更好的朋友！")
+    elseif total > 1 then
+        doer.SoundEmitter:PlaySound("meta5/wendy/elixir_bonus_1")
+        doer.components.talker:Say("更多的朋友给更好的朋友！")
+    end
+    return total
+end
+
+Recipe2("livinglog",
+    { Ingredient(CHARACTER_INGREDIENT.HEALTH, 20) },
+    TECH.NONE,
+    {
+        builder_tag = "plantkin",
+        sg_state = "form_log",
+        actionstr = "GROW",
+        allowautopick = true,
+        no_deconstruction = true,
+        override_numtogive_fn = livinglog_numtogive
+    }
+)

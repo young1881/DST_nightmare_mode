@@ -3,7 +3,7 @@ local function TrueFn()
 end
 
 local function anticheating(inst)
-    inst.components.freezable:SetRedirectFn(TrueFn)
+    -- inst.components.freezable:SetRedirectFn(TrueFn)
 end
 
 local lunargazer_limit = 3
@@ -22,7 +22,7 @@ local function TrySpawnLunarGrazer(inst, data)
         lunargazer.components.combat:AddNoAggroTag("superplant")
         lunargazer.components.damagetyperesist:AddResist("epic", inst, 0)
         lunargazer.components.damagetyperesist:AddResist("superplant", inst, 0)
-        lunargazer_limit = lunargazer_limit - 1
+        -- lunargazer_limit = lunargazer_limit - 1
     end
 end
 
@@ -36,6 +36,12 @@ local function TrySpawnLunarPlant(inst, data)
         lunarplant.components.combat:SetShouldAvoidAggro(inst)
         lunarplant.Transform:SetScale(1.25, 1.25, 1.25)
         TUNING.LUNARTHRALL_PLANT_RANGE = 20
+
+        if lunarplant.sg and lunarplant.sg.mem then
+            lunarplant.sg.mem.noelectrocute = true
+        end
+        lunarplant:AddTag("electricdamageimmune")
+
         if lunarplant.components.damagetyperesist == nil then
             lunarplant:AddComponent("damagetyperesist")
         end

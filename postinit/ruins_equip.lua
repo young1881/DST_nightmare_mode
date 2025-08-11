@@ -98,6 +98,13 @@ end
 local function OnParry(inst, doer, attacker, damage)
     doer:ShakeCamera(CAMERASHAKE.SIDE, 0.1, 0.03, 0.3)
     doer.SoundEmitter:PlaySound("dontstarve/creatures/lava_arena/trails/hide_hit")
+
+    doer:AddTag("curse_immune")
+    doer:DoTaskInTime(0.3, function()
+        if doer:IsValid() then
+            doer:RemoveTag("curse_immune")
+        end
+    end)
     if inst.components.rechargeable:GetPercent() < 0.7 then
         inst.components.rechargeable:SetPercent(0.7)
     end

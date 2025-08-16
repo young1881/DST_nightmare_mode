@@ -49,7 +49,7 @@ function WateryProtection:SpreadProtectionAtPoint(x, y, z, dist, noextinguish)
     end
 
     if self.addwetness and TheWorld.components.farming_manager ~= nil then
-        if self.super == true and math.random() < 0.1 then
+        if self.super == true and math.random() < 0.2 then
             local size = TILE_SCALE
             for i = x - size, x + size do
                 for j = z - size, z + size do

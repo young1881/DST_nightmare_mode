@@ -35,7 +35,7 @@ TUNING.WOLFGANG_HEALTH_NORMAL = 200
 TUNING.WOLFGANG_HEALTH = 200
 TUNING.MIGHTINESS_DRAIN_MULT_SLOW = 0 --保持高饥饿时不掉肌肉值
 TUNING.MIGHTINESS_DRAIN_MULT_NORMAL = 0
-
+TUNING.DUMBBELL_DAMAGE_BLUEGEM = 68.5 --蓝宝石哑铃的伤害倍率
 
 --开局6个土豆
 table.insert(TUNING.GAMEMODE_STARTING_ITEMS.DEFAULT.WOLFGANG, "potato")
@@ -47,6 +47,10 @@ table.insert(TUNING.GAMEMODE_STARTING_ITEMS.DEFAULT.WOLFGANG, "potato")
 
 --口哨配方改动
 AllRecipes.wolfgang_whistle.ingredients = { Ingredient("nightmare_timepiece", 1), Ingredient("potato", 1) }
+--冰哑铃
+AddRecipe2("dumbbell_bluegem", { Ingredient("dumbbell_redgem", 1), Ingredient("bluegem", 1), Ingredient("thulecite", 2) },
+    TECH.NONE,
+    { builder_skill = "wolfgang_dumbbell_crafting" }, { "CHARACTER" })
 
 AddSimPostInit(function()
     STRINGS.NAMES.WOLFGANG_WHISTLE = "勇气口哨"

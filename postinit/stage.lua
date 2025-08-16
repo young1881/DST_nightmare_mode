@@ -35,3 +35,29 @@ AddPrefabPostInit("charlie_stage_post", function(inst)
     inst._rewardpool = REWARDPOOL
     inst:ListenForEvent("play_performed", OnPlayPerformed)
 end)
+
+TUNING.PHONOGRAPH_PLAY_TIME = 1200
+
+local MUSIC_PLAYLIST = {
+    { path = "lumos/group1/jjsnw", handle = "wxmusic", duration = 217 },
+    { path = "lumos/group1/tmg",   handle = "wxmusic", duration = 254 },
+    { path = "lumos/group1/jjb",   handle = "wxmusic", duration = 78 },
+    { path = "lumos/group1/zxmzf", handle = "wxmusic", duration = 288 },
+    { path = "lumos/group1/ddb",   handle = "wxmusic", duration = 246 },
+    { path = "lumos/group1/jbrs",  handle = "wxmusic", duration = 199 },
+}
+
+AddPrefabPostInit("record", function(inst)
+    if not TheWorld.ismastersim then
+        return
+    end
+    local choice = MUSIC_PLAYLIST[math.random(#MUSIC_PLAYLIST)]
+    local recorddata = {
+        song = choice.path,
+        build = nil,
+        displayname = nil,
+        imageicon = nil,
+    }
+    inst.recorddata = recorddata
+    inst.songToPlay = choice.path
+end)

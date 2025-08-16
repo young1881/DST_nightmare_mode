@@ -99,7 +99,7 @@ AddPrefabPostInit("walrus", function(inst)
 		return inst
 	end
 
-	inst.components.lootdropper:AddChanceLoot('walrus_tusk', 0.5) --象牙
+	inst.components.lootdropper:AddChanceLoot('walrus_tusk', 0.8) --象牙
 end)
 
 --铁巨人
@@ -116,6 +116,9 @@ AddPrefabPostInit("ancient_hulk", function(inst)
 	inst.components.lootdropper:AddChanceLoot('opalpreciousgem', 1)      --彩虹宝石
 	inst.components.lootdropper:AddChanceLoot('brainjellyhat', 1)
 	inst.components.lootdropper:AddChanceLoot('brainjellyhat_blueprint', 1)
+
+	inst.components.lootdropper:AddChanceLoot('record', 1)
+	inst.components.lootdropper:AddChanceLoot('phonograph', 1)
 end)
 
 --小海象
@@ -124,7 +127,7 @@ AddPrefabPostInit("little_walrus", function(inst)
 		return inst
 	end
 
-	inst.components.lootdropper:AddChanceLoot('walrus_tusk', 0.5) --象牙
+	inst.components.lootdropper:AddChanceLoot('walrus_tusk', 0.6) --象牙
 end)
 
 -- 伏特羊额外羊角
@@ -133,7 +136,7 @@ AddPrefabPostInit("lightninggoat", function(inst)
 		return inst
 	end
 
-	inst.components.lootdropper:AddChanceLoot('lightninggoathorn', 0.05)
+	inst.components.lootdropper:AddChanceLoot('lightninggoathorn', 0.2)
 end)
 
 -- 龙蝇额外羊角和宝石
@@ -332,18 +335,18 @@ local function AtriumLootFn(lootdropper)
 		end
 
 		-- 一半概率鱼啦啦，一半概率白云
-		-- lootdropper:AddChanceLoot("alterguardian_phase1_lunarrift", 1)
-		-- if math.random() < 0.5 then
-		-- 	lootdropper:AddChanceLoot("deerclops", 1)
-		-- else
-		-- 	for i = 1, 30 do
-		-- 		lootdropper:AddChanceLoot('cursed_monkey_token', 1)
-		-- 	end
-		-- 	lootdropper:AddChanceLoot('ironlord_death', 1)
-		-- end
-		lootdropper:AddChanceLoot("mutateddeerclops", 1)
-		lootdropper:AddChanceLoot("mutatedwarg", 1)
-		lootdropper:AddChanceLoot("mutatedbearger", 1)
+		lootdropper:AddChanceLoot("alterguardian_phase1_lunarrift", 1)
+		if math.random() < 0.5 then
+			lootdropper:AddChanceLoot("deerclops", 1)
+		else
+			for i = 1, 30 do
+				lootdropper:AddChanceLoot('cursed_monkey_token', 1)
+			end
+			lootdropper:AddChanceLoot('ironlord_death', 1)
+		end
+		-- lootdropper:AddChanceLoot("mutateddeerclops", 1)
+		-- lootdropper:AddChanceLoot("mutatedwarg", 1)
+		-- lootdropper:AddChanceLoot("mutatedbearger", 1)
 	end
 end
 
@@ -355,15 +358,15 @@ AddPrefabPostInit("stalker_atrium", function(inst)
 end)
 
 -- 普通巨鹿掉落10个诅咒饰品
--- AddPrefabPostInit("deerclops", function(inst)
--- 	if not TheWorld.ismastersim then
--- 		return inst
--- 	end
+AddPrefabPostInit("deerclops", function(inst)
+	if not TheWorld.ismastersim then
+		return inst
+	end
 
--- 	for i = 1, 10 do
--- 		inst.components.lootdropper:AddChanceLoot('cursed_monkey_token', 1)
--- 	end
--- end)
+	for i = 1, 10 do
+		inst.components.lootdropper:AddChanceLoot('cursed_monkey_token', 1)
+	end
+end)
 
 --鲨鱼
 AddPrefabPostInit("shark", function(inst)

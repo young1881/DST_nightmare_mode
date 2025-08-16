@@ -140,15 +140,15 @@ TUNING.RUINSNIGHTMARE_SPAWN_CHANCE                  = .35
 TUNING.RUINSNIGHTMARE_SPAWN_CHANCE_RIFTS            = .7
 
 -- 晶体巨鹿用来结档
--- TUNING.MUTATED_DEERCLOPS_HEALTH               = 50000 -- 血量
--- TUNING.MUTATED_DEERCLOPS_DAMAGE               = 1000  -- 物理伤害
--- TUNING.MUTATED_DEERCLOPS_PLANAR_DAMAGE        = 80    -- 位面伤害
--- TUNING.MUTATED_DEERCLOPS_ATTACK_RANGE         = 36    -- 攻击距离
--- TUNING.MUTATED_DEERCLOPS_ATTACK_PERIOD        = 1     -- 攻击间隔
--- TUNING.MUTATED_DEERCLOPS_ICELANCE_DAMAGE      = 1500  -- 冰柱伤害
--- TUNING.MUTATED_DEERCLOPS_FRENZY_HP            = 0.1   -- 狂暴状态结束需要打的血量百分比
--- TUNING.MUTATED_DEERCLOPS_STAGGER_TIME         = 1     -- 虚弱的秒数，原版6
--- TUNING.MUTATED_DEERCLOPS_ICELANCE_RANGE.max   = 16    -- 触发冰柱攻击的最近距离 原版12
+TUNING.MUTATED_DEERCLOPS_HEALTH                     = 50000 -- 血量
+TUNING.MUTATED_DEERCLOPS_DAMAGE                     = 1000  -- 物理伤害
+TUNING.MUTATED_DEERCLOPS_PLANAR_DAMAGE              = 80    -- 位面伤害
+TUNING.MUTATED_DEERCLOPS_ATTACK_RANGE               = 36    -- 攻击距离
+TUNING.MUTATED_DEERCLOPS_ATTACK_PERIOD              = 1     -- 攻击间隔
+TUNING.MUTATED_DEERCLOPS_ICELANCE_DAMAGE            = 1500  -- 冰柱伤害
+TUNING.MUTATED_DEERCLOPS_FRENZY_HP                  = 0.1   -- 狂暴状态结束需要打的血量百分比
+TUNING.MUTATED_DEERCLOPS_STAGGER_TIME               = 1     -- 虚弱的秒数，原版6
+TUNING.MUTATED_DEERCLOPS_ICELANCE_RANGE.max         = 16    -- 触发冰柱攻击的最近距离 原版12
 
 --天体后裔BOSS
 TUNING.ALTERGUARDIAN_PHASE4_LUNARRIFT_HEALTH        = 99999
@@ -249,49 +249,30 @@ for k, v in ipairs(ListOfBoss3) do
 	end)
 end
 
-TUNING.SLEEP_HEALTH_PER_TICK = 2  --帐篷回血增强，2是二倍
-TUNING.SLEEP_HUNGER_PER_TICK = -2 --帐篷掉饱食度双倍
-TUNING.SLEEP_SANITY_PER_TICK = 2  --帐篷回san双倍
-TUNING.PORTABLE_TENT_USES = 5     --尼哥的帐篷五次耐久
+--禁止传送
+local function teleport_override_fn(inst)
+	local ipos = inst:GetPosition()
+	local offset = FindWalkableOffset(ipos, 2 * PI * math.random(), 10, 8, true, false)
+		or FindWalkableOffset(ipos, 2 * PI * math.random(), 14, 8, true, false)
 
---- 干燥时间 （480就是一天的长度）
-TUNING.DRY_SUPERFAST = 0.12 * 480 -- 海带
-TUNING.DRY_FAST = 0.25 * 480      -- 怪物肉
-TUNING.DRY_MED = 0.5 * 480        -- 大肉
-
---- 肉干加强
-local function modify_meat_dried(inst)
-	if inst.components.edible ~= nil then
-		inst.components.edible.healthvalue = 40
-		inst.components.edible.hungervalue = 62.5
-		inst.components.edible.sanityvalue = 20
-	end
+	return (offset ~= nil and ipos + offset) or ipos
 end
-
-AddPrefabPostInit("meat_dried", modify_meat_dried)
-
---- 小肉干加强
-local function modify_smallmeat_dried(inst)
-	if inst.components.edible ~= nil then
-		inst.components.edible.healthvalue = 20
-		inst.components.edible.hungervalue = 25
-		inst.components.edible.sanityvalue = 10
-	end
+ListOfBoss6 = {
+	"klaus",     --克劳斯
+	"ancient_hulk", --铁巨人
+	"deerclops",
+	"mutateddeerclops",
+	"stalker_atrium",
+	"ironlord"
+}
+for k, v in pairs(ListOfBoss6) do
+	AddPrefabPostInit(v, function(inst)
+		if inst.components.teleportedoverride == nil then
+			inst:AddComponent("teleportedoverride")
+		end
+		inst.components.teleportedoverride:SetDestPositionFn(teleport_override_fn)
+	end)
 end
-
-AddPrefabPostInit("smallmeat_dried", modify_smallmeat_dried)
-
-
---- 怪物肉干加强
-local function modify_monstermeat_dried(inst)
-	if inst.components.edible ~= nil then
-		inst.components.edible.healthvalue = -3
-		inst.components.edible.hungervalue = 80
-		inst.components.edible.sanityvalue = -5
-	end
-end
-
-AddPrefabPostInit("monstermeat_dried", modify_monstermeat_dried)
 
 
 --抗冰冻
@@ -330,51 +311,14 @@ for k, v in ipairs(ListOfBoss5) do
 	end)
 end
 
-TUNING.GHOSTLYELIXIR_RETALIATION_DAMAGE = 1000                --蒸馏复仇反伤伤害
-TUNING.GHOSTLYELIXIR_SLOWREGEN_HEALING = 4.5                  --亡者补药回复血量
-TUNING.ABIGAIL_DMG_PERIOD = 1.5                               --阿比的攻速
-TUNING.ABIGAIL_VEX_GHOSTLYFRIEND_DAMAGE_MOD = 2.4             --温蒂受易伤buff的加成
-TUNING.ABIGAIL_VEX_DURATION = 8                               --易伤效果持续时间
-TUNING.WILLOW_EMBER_LUNAR = 3                                 --月火费用
-TUNING.WILLOW_FIREFRENZY_MULT = 1.75                          --燃烧斗士伤害提高百分之二十五
-TUNING.WILLOW_LUNAR_FIRE_BONUS = 1.25                         --月火增伤百分之25
-TUNING.WILLOW_LUNAR_FIRE_TIME = 5.0                           --月火持续时间
-TUNING.WILLOW_LUNAR_FIRE_DAMAGE = 8                           --月火的伤害
-TUNING.WILLOW_LUNAR_FIRE_PLANAR_DAMAGE = 48                   --月火的位面伤害
-TUNING.WILLOW_LUNAR_FIRE_COOLDOWN = 5.0                       --月火cd
-TUNING.CHANNELCAST_SPEED_MOD = 90 / 100                       --放月火时的移速
-TUNING.WILLOW_BERNIE_HEALTH_REGEN_PERIOD = 1.5                --伯尼回血判定时间
-TUNING.WILLOW_BERNIE_HEALTH_REGEN_1 = 400                     --伯尼一级回血每秒回4
-TUNING.WILLOW_BERNIE_HEALTH_REGEN_2 = 800                     --伯尼二级回血每秒回8
-TUNING.WINONA_CATAPULT_MEGA_PLANAR_DAMAGE = 75                --启迪投石机位面袭击的伤害
-TUNING.WINONA_CATAPULT_HEALTH = 250                           --投石机的血量
-TUNING.AUTUMN_LENGTH = 16                                     --秋天的时间
 TUNING.EYETURRET_DAMAGE = 175                                 --眼球塔伤害
 TUNING.EYETURRET_HEALTH = 114514                              --眼球塔血量
 TUNING.EYETURRET_ATTACK_PERIOD = 1.5                          --眼球塔攻速
 TUNING.LUNARTHRALL_PLANT_DAMAGE = 185                         --亮茄的物理伤害
-TUNING.SHADOWWAXWELL_SHADOWSTRIKE_DAMAGE_MULT = 2.6           --暗影角斗士冲刺伤害倍率
+
 TUNING.WORM_BOSS_HEALTH = 6000                                --巨大蠕虫血量
 TUNING.WORM_BOSS_DAMAGE = 24                                  --巨大蠕虫伤害
-TUNING.BOOK_BEES_AMOUNT = 7                                   --养蜂笔记每次蜜蜂数量
-TUNING.BOOK_BEES_MAX_ATTACK_RANGE = 22                        --养蜂笔记蜜蜂的最大攻击范围
-TUNING.BOOK_MAX_GRUMBLE_BEES = 22                             --养蜂笔记最大蜜蜂数量
-TUNING.WENDYSKILL_COMMAND_COOLDOWN = 2                        --轮盘技能总cd
-TUNING.WENDYSKILL_GESTALT_ATTACKAT_COMMAND_COOLDOWN = 5       --冲刺技能cd
-TUNING.WENDYSKILL_ESCAPE_TIME = 3.5                           --逃离技能持续时间
-TUNING.WENDYSKILL_DASHATTACK_VELOCITY = 15.0                  --冲刺速度
--- TUNING.WENDYSKILL_DASHATTACK_HITRATE = 0.5        --冲刺时攻速？
-TUNING.ARMOR_WATHGRITHR_IMPROVEDHAT_ABSORPTION = 0.80         --统帅头防御效果
-TUNING.DUMBBELL_DAMAGE_BLUEGEM = 68.5                         --蓝宝石哑铃的伤害倍率
-TUNING.WENDYSKILL_SMALLGHOST_EXTRACHANCE = 0.95               --小惊吓的概率
-TUNING.ABIGAIL_GESTALT_DAMAGE.day = 120                       -- 月阿比白天的伤害
-TUNING.ABIGAIL_GESTALT_DAMAGE.dusk = 160                      -- 月阿比黄昏的伤害
-TUNING.ABIGAIL_GESTALT_DAMAGE.night = 280                     -- 月夜晚的伤害
-TUNING.SKILLS.WENDY.LUNARELIXIR_DAMAGEBONUS_GESTALT = 12 * 10 -- abigail gestalt 的位面伤害
-TUNING.SKILLS.WENDY.LUNARELIXIR_DAMAGEBONUS = 12              -- abigail 的位面伤害
-TUNING.SKILLS.WENDY.LUNARELIXIR_DURATION = 2000000            -- 光之怒的持续时间
--- TUNING.LUNARTHRALL_PLANT_DAMAGE = 220                         --反击伤害
--- TUNING.LUNARTHRALL_PLANT_PLANAR_DAMAGE = 35                   --反击的位面
+
 
 AddPrefabPostInit("sporecloud", function(inst)
 	if not TheWorld.ismastersim then
@@ -425,5 +369,3 @@ AddPrefabPostInit("sporecloud", function(inst)
 		end
 	end)
 end)
-
-

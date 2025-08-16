@@ -1,3 +1,36 @@
+TUNING.BOOK_BEES_AMOUNT = 7            --养蜂笔记每次蜜蜂数量
+TUNING.BOOK_BEES_MAX_ATTACK_RANGE = 22 --养蜂笔记蜜蜂的最大攻击范围
+TUNING.BOOK_MAX_GRUMBLE_BEES = 22      --养蜂笔记最大蜜蜂数量
+
+-- 警告表双配方
+AddRecipe2("pocketwatch_weapon2",
+    { Ingredient("tentaclespike", 1), Ingredient("nightsword", 3), Ingredient("purplegem", 3), Ingredient(
+        "waxwelljournal", 0), Ingredient("horrorfuel", 7) }, TECH.SCIENCE_ONE,
+    {
+        product = "pocketwatch_weapon",
+        image = "pocketwatch_weapon.tex",
+        description =
+        "pocketwatch_weapon2",
+        builder_tag = "reader"
+    },
+    { "CHARACTER" })
+STRINGS.RECIPE_DESC.POCKETWATCH_WEAPON2 = "暗影秘典的力量成功复制了这件完美的艺术品"
+
+
+-- 养蜂笔记
+AddRecipe2("book_bees2",
+    { Ingredient("papyrus", 2), Ingredient("slurper_pelt", 4), Ingredient("fossil_piece", 2), Ingredient(
+        "slurtle_shellpieces", 3) }, TECH.NONE_TWO,
+    {
+        product = "book_bees",
+        image = "book_bees.tex",
+        description =
+        "book_bees2",
+        builder_tag = "bookbuilder"
+    },
+    { "CHARACTER" })
+STRINGS.RECIPE_DESC.BOOK_BEES2 = "使用噩梦燃料来滋补这些饥饿的蜂群"
+
 local SCIENCE_RADIUS = 3
 
 local function CheckNearbyPlayers(inst)

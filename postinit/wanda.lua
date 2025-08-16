@@ -32,8 +32,22 @@ AddPrefabPostInit("wanda", function(inst)
 	inst:AddTag("darkmagic")
 	-- inst.components.builder.magic_bonus = 2
 	inst.components.builder:GiveTempTechBonus({ MAGIC = 2 })
+
+	inst.components.oldager:AddValidHealingCause("pocketwatch_injure")
 end)
 
+AddRecipe2(
+	"pocketwatch_injure",
+	{ Ingredient("pocketwatch_heal", 1), Ingredient("horrorfuel", 10), Ingredient("redgem", 1) },
+	TECH.NONE,
+	{
+		builder_tag = "clockmaker",
+		no_deconstruction = pocketwatch_nodecon,
+		atlas =
+		"images/inventoryimages/pocketwatch_injure.xml"
+	},
+	{ "CHARACTER", "RESTORATION", "MOD" }
+)
 
 UPGRADETYPES.POCKETWATCH_WEAPON = "pocketwatch_weapon"
 
@@ -270,12 +284,6 @@ AddPrefabPostInit("clock_container", function(inst)
 	inst:RemoveComponent("burnable")
 end)
 
--- --警告表
--- AddRecipe2("pocketwatch_weapon",
---     { Ingredient("nightsword", 1), Ingredient("waxwelljournal", 1),Ingredient("livinglog", 5),Ingredient("nightmarefuel", 20) }, TECH.NONE_TWO,
---     { builder_tag = "reader" }, { "CHARACTER" })
--- STRINGS.RECIPE_DESC.SPEAR_WATHGRITHR_LIGHTNING_CHARGED = "暗影大法师的得意复制品——通过暗影魔典的力量使用基础材料来将武器附魔重铸"
-
 
 local function pocketwatch_nodecon(inst) return not inst:HasTag("pocketwatch_inactive") end
 AddRecipe2("pocketwatch_cherrift",
@@ -362,45 +370,6 @@ end)
 AddPrefabPostInit("pocketwatch_cherrift", function(inst)
 	inst.cast_scope = 11
 end)
-
-local function Heal_DoCastSpell(inst, doer)
-	local health = doer.components.health
-	if health ~= nil and not health:IsDead() then
-		doer.components.oldager:StopDamageOverTime()
-		health:DoDelta(TUNING.POCKETWATCH_HEAL_HEALING, true, inst.prefab)
-		doer.components.temperature:SetTemperature(TUNING.BOOK_TEMPERATURE_AMOUNT)
-		doer.components.moisture:SetMoistureLevel(0)
-
-		local fx = SpawnPrefab((doer.components.rider ~= nil and doer.components.rider:IsRiding()) and
-			"pocketwatch_heal_fx_mount" or "pocketwatch_heal_fx")
-		fx.entity:SetParent(doer.entity)
-
-		inst.components.rechargeable:Discharge(TUNING.POCKETWATCH_HEAL_COOLDOWN)
-		if doer._acidrain_immunity_task ~= nil then
-			doer._acidrain_immunity_task:Cancel()
-		end
-		doer.components.acidlevel:SetIgnoreAcidRainTicks(true)
-		doer._acidrain_immunity_task = doer:DoTaskInTime(30, function()
-			if doer.components.acidlevel then
-				doer.components.acidlevel:SetIgnoreAcidRainTicks(false)
-			end
-			doer._acidrain_immunity_task = nil
-		end)
-
-		return true
-	end
-end
-
-
-AddPrefabPostInit("pocketwatch_heal", function(inst)
-	if not TheWorld.ismastersim then
-		return
-	end
-
-	inst.components.pocketwatch.DoCastSpell = Heal_DoCastSpell
-end)
-
-
 
 --二次表作祟后不损坏
 AddPrefabPostInit("pocketwatch_revive", function(inst)

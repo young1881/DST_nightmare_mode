@@ -97,44 +97,6 @@ STRINGS.RECIPE_DESC.BOOK_HARVEST = "作物都自己跑到身上来"
 local armorskeleton_ingredients = { Ingredient("coin_1", 1), Ingredient("armor_sanity", 1), Ingredient("voidcloth", 3) }
 AddRecipe2("armorskeleton", armorskeleton_ingredients, TECH.LOST, { nounlock = false }, { "ARMOUR" })
 
---鸟嘴壶"
-AddRecipe2("premiumwateringcan",
-    { Ingredient("livinglog", 2), Ingredient("rope", 4), Ingredient("boneshard", 4), Ingredient("bluegem", 1) },
-    TECH.NONE_TWO, nil, { "GARDENING" })
-
---荆棘茄甲
-AddRecipe2("armor_lunarplant_husk",
-    { Ingredient("armor_bramble", 1), Ingredient("moonglass", 8), Ingredient("purebrilliance", 2) }, TECH.NONE_TWO,
-    { builder_tag = "plantkin", builder_skill = "wormwood_allegiance_lunar_plant_gear_1" },
-    { "CHARACTER" })
-
--- 远古粑粑包
-AddRecipe2("transmute_compostwrap", { Ingredient("cave_banana",
-        3), Ingredient("cutlichen", 2), Ingredient("thulecite_pieces", 2) }, TECH.ANCIENT_FOUR,
-    { product = "compostwrap", image = "compostwrap.tex", description = "transmute_compostwarp", builder_tag = "plantkin", nounlock = true },
-    { "CHARACTER" })
-STRINGS.RECIPE_DESC.TRANSMUTE_COMPOSTWRAP = "远古秘制老八，九九八十一天发酵"
-
--- 小飞虫血量调整
-AddRecipe2("wormwood_lightflier", { Ingredient(CHARACTER_INGREDIENT.HEALTH, 5), Ingredient("lightbulb", 1) }, TECH.NONE,
-    {
-        builder_skill = "wormwood_allegiance_lunar_mutations_2",
-        product = "wormwood_mutantproxy_lightflier",
-        sg_state =
-        "spawn_mutated_creature",
-        actionstr = "TRANSFORM",
-        no_deconstruction = true,
-        dropitem = true,
-        nameoverride =
-        "lightflier",
-        description = "wormwood_lightflier",
-        canbuild = function(inst, builder)
-            return
-                (builder.components.petleash and not builder.components.petleash:IsFullForPrefab("wormwood_lightflier")),
-                "HASPET"
-        end
-    }, { "CHARACTER" })
-
 -- 批量莎草纸
 GLOBAL.TUNING.STQKACT = true
 
@@ -179,10 +141,6 @@ AddRecipe2("spoiled_food_bunch",
         end
     })
 STRINGS.RECIPE_DESC.SPOILED_FOOD_BUNCH = "人人都可以是腐烂仙人！"
-
--- 晾肉架配方调整
--- Recipe2("meatrack", { Ingredient("twigs", 5), Ingredient("charcoal", 3), Ingredient("rope", 1) }, TECH.SCIENCE_ONE,
---     { placer = "meatrack_placer" }, { "COOKING" })
 
 --铥棒修改
 AddRecipePostInit("ruins_bat", function(self)
@@ -239,105 +197,11 @@ AddRecipe2("chestupgrade_stacksize",
     { Ingredient("wagpunk_bits", 5), Ingredient("transistor", 4), Ingredient("goldnugget", 8) },
     TECH.NONE_TWO, nil, { "NONE" })
 
---哀悼荣耀"
-AddRecipe2("ghostflower", { Ingredient("moon_cap", 1), Ingredient("moonglass", 1) }, TECH.NONE_TWO, nil, { "REFINE" })
-
--- 警告表双配方
-AddRecipe2("pocketwatch_weapon2",
-    { Ingredient("tentaclespike", 1), Ingredient("nightsword", 3), Ingredient("purplegem", 3), Ingredient(
-        "waxwelljournal", 0), Ingredient("horrorfuel", 7) }, TECH.SCIENCE_ONE,
-    {
-        product = "pocketwatch_weapon",
-        image = "pocketwatch_weapon.tex",
-        description =
-        "pocketwatch_weapon2",
-        builder_tag = "reader"
-    },
-    { "CHARACTER" })
-STRINGS.RECIPE_DESC.POCKETWATCH_WEAPON2 = "暗影秘典的力量成功复制了这件完美的艺术品"
-
--- --养蜂笔记
--- AddRecipe2("book_bees",
---     { Ingredient("papyrus", 2), Ingredient("slurper_pelt", 4), Ingredient("fossil_piece", 2), Ingredient(
---         "slurtle_shellpieces", 3) }, nil,
---     { builder_tag = "bookbuilder" }, { "CHARACTER" })
-
--- 养蜂笔记修复
-AddRecipe2("book_bees2",
-    { Ingredient("papyrus", 2), Ingredient("slurper_pelt", 4), Ingredient("fossil_piece", 2), Ingredient(
-        "slurtle_shellpieces", 3) }, TECH.NONE_TWO,
-    {
-        product = "book_bees",
-        image = "book_bees.tex",
-        description =
-        "book_bees2",
-        builder_tag = "bookbuilder"
-    },
-    { "CHARACTER" })
-STRINGS.RECIPE_DESC.BOOK_BEES2 = "使用噩梦燃料来滋补这些饥饿的蜂群"
-
---余烬
-AddRecipe2("willow_ember",
-    { Ingredient("lighter", 0), Ingredient("ash", 5), Ingredient("willow_ember", 1) },
-    TECH.SCIENCE_ONE,
-    {
-        numtogive = 6,
-
-    })
---统帅头
-Recipe2("wathgrithr_improvedhat",
-    { Ingredient("thulecite_pieces", 6), Ingredient("wathgrithrhat", 1), Ingredient("rocks", 4) }, TECH.NONE_TWO,
-    { builder_tag = "valkyrie" }, { "CHARACTER" })
---冰哑铃
-AddRecipe2("dumbbell_bluegem", { Ingredient("dumbbell_redgem", 1), Ingredient("bluegem", 1), Ingredient("thulecite", 2) },
-    TECH.NONE,
-    { builder_skill = "wolfgang_dumbbell_crafting" }, { "CHARACTER" })
 --月晷
-AddRecipe2("moondial",
-    { Ingredient("abigail_flower", 1), Ingredient("reskin_tool", 1) }, TECH.NONE_TWO,
-    {
-        product = "moondial",
-        image = "moondial.tex",
-        description =
-        "moondial2",
-        builder_tag = "ghostlyfriend"
-    },
-    { "CHARACTER" })
-STRINGS.RECIPE_DESC.MOONDIAL2 = "给下地温玩月亮阿比的"
-
---光之怒
-Recipe2("ghostlyelixir_lunar",
-    { Ingredient("thulecite_pieces", 6), Ingredient("purebrilliance", 2), Ingredient("ghostflower", 5) }, TECH.NONE_TWO,
-    { builder_tag = "ghostlyfriend" }, { "CHARACTER" })
+AddRecipe2("moondial", {
+    Ingredient("bluegem", 1),
+    Ingredient("cutstone", 1),
+    Ingredient("goldnugget", 1)
+}, TECH.NONE, { placer = "moondial_placer", min_spacing = 2 })
 
 
-local function livinglog_numtogive(recipe, doer)
-    local total = 1
-    if math.random() < 0.4 then
-        total = total + 1
-    end
-    if math.random() < 0.1 then
-        total = total + 1
-    end
-    if total > 2 then
-        doer.SoundEmitter:PlaySound("meta5/wendy/elixir_bonus_2")
-        doer.components.talker:Say("更多的朋友给更好的朋友！")
-    elseif total > 1 then
-        doer.SoundEmitter:PlaySound("meta5/wendy/elixir_bonus_1")
-        doer.components.talker:Say("更多的朋友给更好的朋友！")
-    end
-    return total
-end
-
-Recipe2("livinglog",
-    { Ingredient(CHARACTER_INGREDIENT.HEALTH, 20) },
-    TECH.NONE,
-    {
-        builder_tag = "plantkin",
-        sg_state = "form_log",
-        actionstr = "GROW",
-        allowautopick = true,
-        no_deconstruction = true,
-        override_numtogive_fn = livinglog_numtogive
-    }
-)

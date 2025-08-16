@@ -289,6 +289,18 @@ AddPrefabPostInit("alterguardian_phase1", function(inst)
     inst.components.groundpounder.burner = true
     inst.components.groundpounder.groundpoundfx = "firesplash_fx"
     inst.components.groundpounder.groundpoundringfx = "firering_fx"
+
+
+    local function OnBossDeath(inst, data)
+        if data ~= nil and data.afflicter ~= nil and data.afflicter:HasTag("player") then
+            local killer = data.afflicter
+            if killer.SoundEmitter ~= nil then
+                killer.SoundEmitter:PlaySound("lumos/group1/Exordium_Slain")
+            end
+        end
+    end
+
+    inst:ListenForEvent("death", OnBossDeath)
 end)
 
 
@@ -497,6 +509,17 @@ AddPrefabPostInit("alterguardian_phase2", function(inst)
     end
     inst.components.combat:AddNoAggroTag("superplant")
     inst.components.damagetyperesist:AddResist("lunarthrall_plant", inst, 0)
+
+    local function OnBossDeath(inst, data)
+        if data ~= nil and data.afflicter ~= nil and data.afflicter:HasTag("player") then
+            local killer = data.afflicter
+            if killer.SoundEmitter ~= nil then
+                killer.SoundEmitter:PlaySound("lumos/group1/The_City_Slain")
+            end
+        end
+    end
+
+    inst:ListenForEvent("death", OnBossDeath)
 end)
 
 
@@ -1041,6 +1064,17 @@ AddPrefabPostInit("alterguardian_phase3", function(inst)
     end
     inst.components.combat:AddNoAggroTag("superplant")
     inst.components.damagetyperesist:AddResist("lunarthrall_plant", inst, 0)
+
+    local function OnBossDeath(inst, data)
+        if data ~= nil and data.afflicter ~= nil and data.afflicter:HasTag("player") then
+            local killer = data.afflicter
+            if killer.SoundEmitter ~= nil then
+                killer.SoundEmitter:PlaySound("lumos/group1/The_Beyond_Slain")
+            end
+        end
+    end
+
+    inst:ListenForEvent("death", OnBossDeath)
 end)
 
 

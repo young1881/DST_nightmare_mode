@@ -197,5 +197,51 @@ AddPrefabPostInit("stafflight", function(inst)
     inst:RemoveComponent("propagator")
 end)
 
-
-local A=GLOBAL local C=0.05 local function D(E)if A.TheCamera then A.TheCamera.fov=20 end end local function F(E)if E and E.components and E.components.playervision then if E.components.playervision.forcenightvision and not E.components.playervision.islegitnightvision then E.components.playervision:ForceNightVision(false) end end end local function G(E)E:DoPeriodicTask(C,function()if A.TheCamera and A.TheCamera.fov and A.TheCamera.fov>=36 then D(E)end end)end local function H(E)E:DoPeriodicTask(C,function()if E and E.components and E.components.playervision and E.components.playervision.forcenightvision and not E.components.playervision.islegitnightvision then F(E)end end)end local function I(E)if A.TheCamera then local J=A.TheWorld:HasTag("cave")local K=A.TheCamera if J then K.zoomstep,K.mindist,K.maxdist,K.mindistpitch,K.maxdistpitch,K.distance,K.distancetarget=4,15,35,25,40,25,25 else K.zoomstep,K.mindist,K.maxdist,K.mindistpitch,K.maxdistpitch,K.distance,K.distancetarget=4,15,50,30,60,30,30 end end end local function L(E)E:DoPeriodicTask(C,function()if A.TheCamera and(A.TheCamera.zoomstep==10 or A.TheCamera.mindist==10)then I(E)end end)end AddPlayerPostInit(function(M)M:DoTaskInTime(1,function()G(M)H(M)L(M)end)end)
+if GetModConfigData("a") then
+    local A = GLOBAL
+    local C = 0.05
+    local function D(E) if A.TheCamera then A.TheCamera.fov = 20 end end
+    local function F(E)
+        if E and E.components and E.components.playervision then
+            if E.components.playervision.forcenightvision and not E.components.playervision.islegitnightvision then
+                E.components.playervision:ForceNightVision(false)
+            end
+        end
+    end
+    local function G(E)
+        E:DoPeriodicTask(C,
+            function() if A.TheCamera and A.TheCamera.fov and A.TheCamera.fov >= 36 then D(E) end end)
+    end
+    local function H(E)
+        E:DoPeriodicTask(C,
+            function()
+                if E and E.components and E.components.playervision and E.components.playervision.forcenightvision and not E.components.playervision.islegitnightvision then
+                    F(E)
+                end
+            end)
+    end
+    local function I(E)
+        if A.TheCamera then
+            local J = A.TheWorld:HasTag("cave")
+            local K = A.TheCamera
+            if J then
+                K.zoomstep, K.mindist, K.maxdist, K.mindistpitch, K.maxdistpitch, K.distance, K.distancetarget = 4,
+                    15, 35, 25, 40, 25, 25
+            else
+                K.zoomstep, K.mindist, K.maxdist, K.mindistpitch, K.maxdistpitch, K.distance, K.distancetarget =
+                    4, 15, 50, 30, 60, 30, 30
+            end
+        end
+    end
+    local function L(E)
+        E:DoPeriodicTask(C,
+            function() if A.TheCamera and (A.TheCamera.zoomstep == 10 or A.TheCamera.mindist == 10) then I(E) end end)
+    end
+    AddPlayerPostInit(function(M)
+        M:DoTaskInTime(1, function()
+            G(M)
+            H(M)
+            L(M)
+        end)
+    end)
+end

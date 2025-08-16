@@ -218,6 +218,17 @@ AddPrefabPostInit("stalker_atrium", function(inst)
         end
         inst.components.damagetyperesist:AddResist("shadow_aligned", inst, 0)
         inst.components.sanityaura.aura = -TUNING.SANITYAURA_HUGE * 3 --掉san光环的倍数，原版-400
+
+        local function OnBossDeath(inst, data)
+            if data ~= nil and data.afflicter ~= nil and data.afflicter:HasTag("player") then
+                local killer = data.afflicter
+                if killer.SoundEmitter ~= nil then
+                    killer.SoundEmitter:PlaySound("lumos/group1/The_Spire_Slain")
+                end
+            end
+        end
+
+        inst:ListenForEvent("death", OnBossDeath)
     end
 end)
 

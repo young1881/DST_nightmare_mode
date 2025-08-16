@@ -1,4 +1,17 @@
 GLOBAL.setmetatable(env, { __index = function(t, k) return GLOBAL.rawget(GLOBAL, k) end })
+
+GLOBAL.MOD_VERSION = "4.6.3.1"
+
+local require = GLOBAL.require
+
+GLOBAL.ISP = {
+	ENV      = ENV,
+	MODNAME  = modname,
+	RPC_NAME = modname .. "_rpc",
+}
+
+ISP = GLOBAL.ISP
+
 PrefabFiles = {
 	"globalposition_classified",
 	"globalmapicon_noproxy", --GPS
@@ -38,9 +51,6 @@ PrefabFiles = {
 	"brain_coral",
 	"wx78_electricattack",
 	"living_artifact",
-	"wx78_scanner",
-	"wx78_modules",
-	"wx78",
 	"hitsparks_fx",
 	"mandrakehouse",
 	"dumbbells",
@@ -49,6 +59,7 @@ PrefabFiles = {
 	"wortox_soul_in_fx",
 	"wortox_soul_spawn",
 	"wortox_soul",
+	"pocketwatch_injure",
 
 	-- 天体相关
 	"lava_sinkhole",
@@ -60,19 +71,6 @@ PrefabFiles = {
 	"newfx",
 	"lunarplantfx",
 }
-
-local require = GLOBAL.require
-
-GLOBAL.ISP = {
-	ENV      = ENV,
-	MODNAME  = modname,
-	RPC_NAME = modname .. "_rpc",
-}
-
-ISP = GLOBAL.ISP
-
--- 语言包替换
-LoadPOFile("language/pigman.po", "ch")
 
 Assets = {
 	Asset("SCRIPT", "scripts/wx78_moduledefs.lua"),
@@ -94,59 +92,18 @@ Assets = {
 	Asset("IMAGE", "images/inventoryimages/brain_coral.tex"),
 	Asset("ATLAS", "images/inventoryimages/brain_coral.xml"),
 	Asset("ANIM", "anim/player_actions_roll.zip"), --附身铠甲动画
+	Asset("SOUND", "sound/lumos.fsb"),
+	Asset("SOUNDPACKAGE", "sound/lumos.fev"),
 }
 
-
---禁用蜘蛛人
-local ban_character_list = {
-	"webber",
-	"wurt",
-}
-
-STRINGS = GLOBAL.STRINGS
-
-for i, v in ipairs(ban_character_list) do
-	RemoveDefaultCharacter(v)
-end
-
---命名
-STRINGS.NAMES.ANCIENT_HULK = "远古铁巨人"
-STRINGS.NAMES.ANCIENT_SCANNER = "暗影侦察者"
-STRINGS.NAMES.SHADOWDRAGON = "恐惧之龙"
-STRINGS.NAMES.SHADOWEYETURRET = "残缺的远古眼球哨兵守卫"
-STRINGS.NAMES.SHADOWEYETURRET2 = "完整的远古眼球哨兵守卫 "
-STRINGS.NAMES.WORMWOOD_SEEDS = "野性种子"
-STRINGS.ACTIONS.CASTAOE.RUINS_BAT = "格挡"
-STRINGS.NAMES.IRONLORD = "白云"
-STRINGS.NAMES.IRONLORD_DEATH = "残骸"
-STRINGS.NAMES.SPIDER_ROBOT = "遗迹守卫"
-
---禁止传送
-local function teleport_override_fn(inst)
-	local ipos = inst:GetPosition()
-	local offset = FindWalkableOffset(ipos, 2 * PI * math.random(), 10, 8, true, false)
-		or FindWalkableOffset(ipos, 2 * PI * math.random(), 14, 8, true, false)
-
-	return (offset ~= nil and ipos + offset) or ipos
-end
-ListOfBoss6 = {
-	"klaus",     --克劳斯
-	"ancient_hulk", --铁巨人
-	"deerclops",
-	"mutateddeerclops",
-	"stalker_atrium",
-	"ironlord"
-}
-for k, v in pairs(ListOfBoss6) do
-	AddPrefabPostInit(v, function(inst)
-		if inst.components.teleportedoverride == nil then
-			inst:AddComponent("teleportedoverride")
-		end
-		inst.components.teleportedoverride:SetDestPositionFn(teleport_override_fn)
-	end)
-end
+modimport("strings.lua")
 
 ------------ 插入脚本 --------------
+local function load_if_enabled(name, path)
+	if GetModConfigData(name) then
+		modimport(path)
+	end
+end
 
 -- mod基础配置
 modimport("postinit/gps.lua")                --全球定位
@@ -155,49 +112,66 @@ modimport("postinit/console.lua")            --禁止控制台
 modimport("postinit/jiazai.lua")             --加载提示
 modimport("postinit/standardcomponents.lua") --前置功能
 
-modimport("postinit/peifang.lua")            --配方
-modimport("postinit/diaoluo.lua")            --掉落加强
-modimport("postinit/jiaqiang.lua")           --位面加强和相关数值
-modimport("postinit/electrocute")            --电击相关改动
-modimport("postinit/curse")
+load_if_enabled('peifang', "postinit/peifang.lua")
+load_if_enabled('diaoluo', "postinit/diaoluo.lua")
+load_if_enabled('jiaqiang', "postinit/jiaqiang.lua")
+load_if_enabled('electrocute', "postinit/electrocute.lua")
+load_if_enabled('curse', "postinit/curse.lua")
+
+if GetModConfigData("word") then
+	LoadPOFile("language/pigman.po", "ch")
+end
 
 -- boss相关
 modimport("postinit/truedamage_system.lua")
-modimport("postinit/alterguardian.lua")    --天体加强
-modimport("postinit/moose.lua")            --春鹅
-modimport("postinit/beequeen.lua")         --蜂后
-modimport("postinit/dragonfly.lua")        --龙蝇
-modimport("postinit/yishi.lua")            --蚁狮刷新
-modimport("postinit/stalker.lua")          --织影者加强
-modimport("postinit/minotaur.lua")         --界犀牛
-modimport("postinit/klaus.lua")            --克老师
-modimport("postinit/deerclops.lua")        --巨鹿
-modimport("postinit/shadowmachine.lua")    --远古发条怪加强
 modimport("postinit/ironlord_spawner.lua") --附身铠甲
 
--- 人物相关
-modimport("postinit/wanda.lua")        --旺达
-modimport("postinit/wendy.lua")        --温蒂
-modimport("postinit/wolfgang.lua")     --大头
-modimport("postinit/wushen.lua")       --女武神
-modimport("postinit/zhiwuren.lua")     --植物人
-modimport("postinit/waxwell.lua")      --老麦
-modimport("postinit/wickerbottom.lua") --奶奶
-modimport("postinit/books.lua")        --书籍
-modimport("postinit/walter.lua")       --尼个
-modimport("postinit/warly.lua")        --厨师
-modimport("postinit/woodie.lua")       --伍迪
-modimport("postinit/wes.lua")          --维斯
-modimport("postinit/wx78.lua")         --机器人
-modimport("postinit/wilson.lua")       --vd
-modimport("postinit/wortox.lua")
+if GetModConfigData("boss") then
+	modimport("postinit/alterguardian.lua") --天体加强
+	modimport("postinit/moose.lua")      --春鹅
+	modimport("postinit/beequeen.lua")   --蜂后
+	modimport("postinit/dragonfly.lua")  --龙蝇
+	modimport("postinit/yishi.lua")      --蚁狮刷新
+	modimport("postinit/stalker.lua")    --织影者加强
+	modimport("postinit/minotaur.lua")   --界犀牛
+	modimport("postinit/klaus.lua")      --克老师
+	modimport("postinit/deerclops.lua")  --巨鹿
+	modimport("postinit/shadowmachine.lua") --远古发条怪加强
+end
 
--- 其他
-modimport("postinit/raterate.lua")                   --快速训牛
-modimport("postinit/alterguardianhat.lua")           --启迪冠
-modimport("postinit/zuowu.lua")                      --作物全季节
-modimport("postinit/ruins_equip.lua")                --铥棒与铥甲
-modimport("postinit/stage.lua")                      --舞台
-modimport("scripts/api")
-modimport("scripts/extensions/shadow_container.lua") --暗影空间
-modimport("postinit/cookpot")                        --烹饪锅
+-- 人物相关
+modimport("postinit/wortox.lua")
+load_if_enabled('wanda', "postinit/wanda.lua")
+load_if_enabled('wendy', "postinit/wendy.lua")
+load_if_enabled('wolfgang', "postinit/wolfgang.lua")
+load_if_enabled('wigfrid', "postinit/wigfrid.lua")
+load_if_enabled('wormwood', "postinit/wormwood.lua")
+load_if_enabled('waxwell', "postinit/waxwell.lua")
+load_if_enabled('wickerbottom', "postinit/wickerbottom.lua")
+load_if_enabled('walter', "postinit/walter.lua")
+load_if_enabled('warly', "postinit/warly.lua")
+load_if_enabled('woodie', "postinit/woodie.lua")
+load_if_enabled('wes', "postinit/wes.lua")
+load_if_enabled('wx78', "postinit/wx78.lua")
+load_if_enabled('wilson', "postinit/wilson.lua")
+load_if_enabled('willow', "postinit/willow.lua")
+load_if_enabled('winona', "postinit/winona.lua")
+if GetModConfigData("wurt") then
+	RemoveDefaultCharacter("wurt")
+end
+if GetModConfigData("webber") then
+	RemoveDefaultCharacter("webber")
+end
+
+-- 生活质量
+load_if_enabled('raterate', "postinit/raterate.lua")
+load_if_enabled('alterguardianhat', "postinit/alterguardianhat.lua")
+load_if_enabled('zuowu', "postinit/zuowu.lua")
+load_if_enabled('ruins_equip', "postinit/ruins_equip.lua")
+load_if_enabled('stage', "postinit/stage.lua")
+load_if_enabled('cookpot', "postinit/cookpot.lua")
+load_if_enabled('sleep', "postinit/sleep.lua")
+if GetModConfigData("shadow_container") then
+	modimport("scripts/api.lua")
+	modimport("scripts/extensions/shadow_container.lua")
+end

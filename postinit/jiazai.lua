@@ -50,9 +50,13 @@ local LOADING_TIPS = {
     TIP_46 = "天体英雄和远古织影者获取了七宗罪的力量，怠惰、嫉妒、愤怒、暴食、色欲、傲慢、贪婪，这些诅咒的随机组合使得饥荒变成了肉鸽游戏。",
     TIP_47 = "沃姆伍德愿意为永恒领域的朋友们更多的牺牲自己身上的朋友们（植物人砍活木有概率砍出2-3个）",
     TIP_48 = "带电的攻击似乎并不能把Boss打出僵直，同时也不会使得植物类生物着火，这下可以安心种田了。",
-    TIP_49 = "可以用排箫和兔子和兔王交换钢丝棉枕头，兔王现在除了胡萝卜，也愿意接受土豆和番茄的上供。"
+    TIP_49 = "可以用排箫和兔子和兔王交换钢丝棉枕头，兔王现在除了胡萝卜，也愿意接受土豆和番茄的上供。",
+    TIP_50 = "插上合唱盒电路，现在的WX-78就是场上最靓的仔",
 }
 
+local MOD_VERSION = GLOBAL.MOD_VERSION or "vUnknown"
+
 for i, v in pairs(LOADING_TIPS) do
-    AddLoadingTip(GLOBAL.STRINGS.UI.LOADING_SCREEN_OTHER_TIPS, i, v)
+    local tip_with_version = string.format("【v%s】%s", MOD_VERSION, v)
+    AddLoadingTip(GLOBAL.STRINGS.UI.LOADING_SCREEN_OTHER_TIPS, i, tip_with_version)
 end

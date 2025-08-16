@@ -12,7 +12,7 @@ local SLOTH_DURATION          = 3
 local PRIDE_DAMAGE_MULT       = 1.2
 
 local ENVY_INTERVAL           = 3
-local ENVY_HEALTH_DRAIN       = 10
+local ENVY_HEALTH_DRAIN       = 20
 local ENVY_SANITY_DRAIN       = 10
 local ENVY_RADIUS             = 12
 local ENVY_SANITY_EXCLUDE_TAG = "lunar_aligned"
@@ -20,7 +20,7 @@ local ENVY_SANITY_EXCLUDE_TAG = "lunar_aligned"
 local WRATH_WEAR_MULT         = 1.5
 local WRATH_DURATION          = 20
 
-local GREED_STEAL_MIN         = 2
+local GREED_STEAL_MIN         = 1
 local GREED_STEAL_MAX         = 3
 
 local GLUTTONY_HUNGER_DRAIN   = 10
@@ -163,12 +163,44 @@ CURSES                        = {
             if not inst.components.thief then
                 inst:AddComponent("thief")
             end
+
+
+            local function AutoStackItem(item)
+                if not (item and item:IsValid() and item.components.stackable) then return end
+                if item.components.stackable:IsFull() then return end
+
+                local STACK_RADIUS = 6
+                local x, y, z = item.Transform:GetWorldPosition()
+                local nearby_items = TheSim:FindEntities(x, y, z, STACK_RADIUS,
+                    { "_stackable" },
+                    { "INLIMBO", "NOCLICK", "penguin_egg", "lootpump_oncatch", "lootpump_onflight" })
+
+                for _, other in ipairs(nearby_items) do
+                    if other:IsValid()
+                        and other ~= item
+                        and other.prefab == item.prefab
+                        and (other.skinname or "") == (item.skinname or "")
+                        and other.components.stackable
+                        and not other.components.stackable:IsFull() then
+                        SpawnPrefab("sand_puff").Transform:SetPosition(other.Transform:GetWorldPosition())
+                        other.components.stackable:Put(item)
+                        break
+                    end
+                end
+            end
+
+            inst.components.thief:SetOnStolenFn(function(thief, victim, item)
+                thief:DoTaskInTime(1, function()
+                    AutoStackItem(item)
+                end)
+            end)
+
             inst:ListenForEvent("onhitother", function(inst, data)
                 local target = data.target
                 if target and target:HasTag("curse_immune") then return end
                 if target and target.components.inventory then
                     local num_items = math.random(GREED_STEAL_MIN, GREED_STEAL_MAX)
-                    for i = 1, num_items do
+                    for _ = 1, num_items do
                         inst.components.thief:StealItem(target)
                     end
                 end
@@ -233,7 +265,7 @@ CURSES                        = {
         name_prefix = "色欲",
         desc = "这让你感到萎靡不振",
         get_details = function()
-            return string.format("受到的伤害减少 %d %", (1 - LUST_DAMAGE_REDUCE) * 100)
+            return string.format("受到的伤害减少 %d%%", math.floor((1 - LUST_DAMAGE_REDUCE) * 100 + 0.5))
         end,
         apply = function(inst)
             local oldDoDelta = inst.components.health.DoDelta
@@ -344,12 +376,27 @@ for _, boss_prefab in ipairs(boss_list) do
         inst.OnSave = function(inst, data)
             data._curse_stage = inst._curse_stage
             data._curse_triggered = inst._curse_triggered
+            data._applied_curses = inst._applied_curses
         end
 
         inst.OnLoad = function(inst, data)
             if data then
                 inst._curse_stage = data._curse_stage or 0
                 inst._curse_triggered = data._curse_triggered or { first = false, second = false }
+                inst._applied_curses = data._applied_curses or {}
+
+                for key, _ in pairs(inst._applied_curses) do
+                    local curse = CURSES[key]
+                    if curse then
+                        curse.apply(inst)
+                        if inst.components.named then
+                            local old_name = inst:GetDisplayName() or inst.name or inst.prefab
+                            if not old_name:find(curse.name_prefix, 1, true) then
+                                inst.components.named:SetName(curse.name_prefix .. "·" .. old_name)
+                            end
+                        end
+                    end
+                end
             end
         end
     end)

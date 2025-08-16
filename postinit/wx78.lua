@@ -1,19 +1,3 @@
-STRINGS.RECIPE_DESC.WX78MODULE_MAXHEALTH = "扫描蜘蛛解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MAXHEALTH2 = "扫描蜘蛛战士、喷吐蜘蛛、穴居蜘蛛、洞穴蜘蛛解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MAXSANITY1 = "扫描蝴蝶或月娥解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MAXSANITY = "扫描各类影怪解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_BEE = "扫描蜂王解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MUSIC = "扫描水獭掠夺者、寄居蟹、帝王蟹解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MAXHUNGER1 = "扫描猎狗解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MAXHUNGER = "扫描熊獾、啜食者解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MOVESPEED = "扫描兔子、兔人解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_MOVESPEED2 = "扫描发条战车、损坏的发条战车或远古守护者解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_HEAT = "扫描红色猎犬、龙蝇解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_COLD = "扫描蓝色猎犬、独眼巨鹿解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_TASER = "扫描伏特羊解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_NIGHTVISION = "扫描鼹鼠、洞穴蠕虫解锁"
-STRINGS.RECIPE_DESC.WX78MODULE_LIGHT = "扫描鱿鱼、球状光虫解锁"
-
 local wx78_moduledefs = require("wx78_moduledefs")
 local AddCreatureScanDataDefinition = wx78_moduledefs.AddCreatureScanDataDefinition
 AddCreatureScanDataDefinition("bunnyman", "movespeed", 2)
@@ -22,10 +6,16 @@ AddCreatureScanDataDefinition("spider_dropper", "maxhealth2", 4)
 AddCreatureScanDataDefinition("spider_hider", "maxhealth2", 4)
 AddCreatureScanDataDefinition("spider_spitter", "maxhealth2", 4)
 AddCreatureScanDataDefinition("spider_warrior", "maxhealth2", 4)
+AddCreatureScanDataDefinition("otter", "music", 4)
 
 AddRecipe2("wx78module_nightvision",
-    { Ingredient("scandata", 4), Ingredient("wormlight", 2), Ingredient("lightbulb", 10) },
+    { Ingredient("scandata", 4), Ingredient("wormlight", 2), Ingredient("mole", 1) },
     TECH.ROBOTMODULECRAFT_ONE, { builder_tag = "upgrademoduleowner" })
+
+AddRecipe2("wx78module_music",
+    { Ingredient("scandata", 4), Ingredient("slurtle_shellpieces", 2) },
+    TECH.ROBOTMODULECRAFT_ONE, { builder_tag = "upgrademoduleowner" })
+
 
 local function nightvision_onworldstateupdate(wx)
     wx:SetForcedNightVision(TheWorld.state.isnight and not TheWorld.state.isfullmoon)
@@ -62,10 +52,140 @@ local function nightvision_deactivate(inst, wx)
 end
 
 AddPrefabPostInit("wx78module_nightvision", function(inst)
-    inst:AddComponent("upgrademodule")
+    if not TheWorld.ismastersim then
+        return inst
+    end
+    if inst.components.upgrademodule == nil then
+        inst:AddComponent("upgrademodule")
+    end
     inst.components.upgrademodule.onactivatedfn = nightvision_activate
     inst.components.upgrademodule.ondeactivatedfn = nightvision_deactivate
 end)
+
+local function music_sanityaura_fn(wx, observer)
+    local num_modules = wx._music_modules or 1
+    return TUNING.WX78_MUSIC_SANITYAURA * num_modules
+end
+
+local function music_sanityfalloff_fn(inst, observer, distsq)
+    return 1
+end
+
+local MUSIC_PLAYLIST = {
+    { path = "lumos/group1/jjsnw", handle = "wxmusic", duration = 217 },
+    { path = "lumos/group1/tmg",   handle = "wxmusic", duration = 254 },
+    { path = "lumos/group1/jjb",   handle = "wxmusic", duration = 78 },
+    { path = "lumos/group1/zxmzf", handle = "wxmusic", duration = 288 },
+    { path = "lumos/group1/ddb",   handle = "wxmusic", duration = 246 },
+    { path = "lumos/group1/jbrs",  handle = "wxmusic", duration = 199 },
+}
+
+local MUSIC_TENDINGTAGS_MUST = { "farm_plant" }
+local function music_update_fn(inst)
+    local x, y, z = inst.Transform:GetWorldPosition()
+    local ents = TheSim:FindEntities(x, y, z, TUNING.WX78_MUSIC_TENDRANGE, MUSIC_TENDINGTAGS_MUST)
+    for _, v in ipairs(ents) do
+        if v.components.farmplanttendable ~= nil then
+            v.components.farmplanttendable:TendTo(inst)
+        end
+    end
+
+    SpawnPrefab("wx78_musicbox_fx").Transform:SetPosition(x, y, z)
+end
+
+local function get_random_track(wx)
+    local last_index = wx._last_music_index
+    local index
+
+    if #MUSIC_PLAYLIST == 1 then
+        index = 1
+    else
+        repeat
+            index = math.random(#MUSIC_PLAYLIST)
+        until index ~= last_index
+    end
+
+    wx._last_music_index = index
+    return MUSIC_PLAYLIST[index]
+end
+
+local function play_random_music(wx)
+    if not wx:IsValid() then
+        return
+    end
+
+    wx.SoundEmitter:KillSound("wxmusic")
+
+    local track = get_random_track(wx)
+    wx.SoundEmitter:PlaySound(track.path, track.handle)
+
+    if wx._music_task ~= nil then
+        wx._music_task:Cancel()
+    end
+    wx._music_task = wx:DoTaskInTime(track.duration, function()
+        play_random_music(wx)
+    end)
+end
+
+local function music_activate(inst, wx)
+    wx._music_modules = (wx._music_modules or 0) + 1
+    wx.components.sanity.dapperness = wx.components.sanity.dapperness + TUNING.WX78_MUSIC_DAPPERNESS
+
+    if wx._music_modules == 1 then
+        if wx.components.sanityaura == nil then
+            wx:AddComponent("sanityaura")
+            wx.components.sanityaura.aurafn = music_sanityaura_fn
+            wx.components.sanityaura.fallofffn = music_sanityfalloff_fn
+            wx.components.sanityaura.max_distsq = TUNING.WX78_MUSIC_AURADSQ
+        end
+
+        if wx._tending_update == nil then
+            wx._tending_update = wx:DoPeriodicTask(TUNING.WX78_MUSIC_UPDATERATE, music_update_fn, 1)
+        end
+
+        play_random_music(wx)
+    elseif wx._music_modules == 2 then
+        wx.SoundEmitter:SetParameter("wxmusic", "wathgrithr_intensity", 1)
+    end
+end
+
+local function music_deactivate(inst, wx)
+    wx._music_modules = math.max(0, wx._music_modules - 1)
+    wx.components.sanity.dapperness = wx.components.sanity.dapperness - TUNING.WX78_MUSIC_DAPPERNESS
+
+    wx.components.sanityaura.max_distsq = (wx._music_modules * TUNING.WX78_MUSIC_TENDRANGE) *
+        (wx._music_modules * TUNING.WX78_MUSIC_TENDRANGE)
+
+    if wx._music_modules == 0 then
+        wx:RemoveComponent("sanityaura")
+
+        if wx._tending_update ~= nil then
+            wx._tending_update:Cancel()
+            wx._tending_update = nil
+        end
+
+        wx.SoundEmitter:KillSound("wxmusic")
+        if wx._music_task ~= nil then
+            wx._music_task:Cancel()
+            wx._music_task = nil
+        end
+    elseif wx._music_modules == 1 then
+        wx.SoundEmitter:SetParameter("wxmusic", "wathgrithr_intensity", 0)
+    end
+end
+
+
+AddPrefabPostInit("wx78module_music", function(inst)
+    if not TheWorld.ismastersim then
+        return inst
+    end
+    if inst.components.upgrademodule == nil then
+        inst:AddComponent("upgrademodule")
+    end
+    inst.components.upgrademodule.onactivatedfn = music_activate
+    inst.components.upgrademodule.ondeactivatedfn = music_deactivate
+end)
+
 
 AddRecipe2("living_artifact",
     { Ingredient("gears", 2), Ingredient("transistor", 1), Ingredient("trinket_6", 3), Ingredient("bluegem", 2) },
@@ -118,6 +238,10 @@ end
 
 AddModRPCHandler("my_mod", "inspiration_release", function(inst)
     inst:PushEvent("custom_inspiration_release")
+
+    if inst._music_modules ~= nil and inst._music_modules > 0 then
+        play_random_music(inst)
+    end
 end)
 
 GLOBAL.TheInput:AddKeyDownHandler(GLOBAL.KEY_R, function()
@@ -214,7 +338,6 @@ local function StartMoistureImmunity(inst)
         inst._is_setting_moisture = false
     end
 
-    -- 初始清除一次湿度
     inst._moisture_immunity_remover()
     inst:ListenForEvent("moisturedelta", inst._moisture_immunity_remover)
     if inst.components.freezable ~= nil then
@@ -269,20 +392,146 @@ local function ChessDamageMultiplier(inst, target)
     return 1
 end
 
+local function get_plugged_module_indexes(inst)
+    local upgrademodule_defindexes = {}
+    for _, module in ipairs(inst.components.upgrademoduleowner.modules) do
+        table.insert(upgrademodule_defindexes, module._netid)
+    end
+
+    -- Fill out the rest of the table with 0s
+    while #upgrademodule_defindexes < TUNING.WX78_MAXELECTRICCHARGE do
+        table.insert(upgrademodule_defindexes, 0)
+    end
+
+    return upgrademodule_defindexes
+end
+
+local function OnUpgradeModuleAdded(inst, moduleent)
+    local slots_for_module = moduleent.components.upgrademodule.slots
+    inst._chip_inuse = inst._chip_inuse + slots_for_module
+
+    local upgrademodule_defindexes = get_plugged_module_indexes(inst)
+
+    inst:PushEvent("upgrademodulesdirty", upgrademodule_defindexes)
+    if inst.player_classified ~= nil then
+        local newmodule_index = inst.components.upgrademoduleowner:NumModules()
+        inst.player_classified.upgrademodules[newmodule_index]:set(moduleent._netid or 0)
+    end
+end
+
+local function OnUpgradeModuleRemoved(inst, moduleent)
+    inst._chip_inuse = inst._chip_inuse - moduleent.components.upgrademodule.slots
+
+    -- If the module has 1 use left, it's about to be destroyed, so don't return it to the inventory.
+    if moduleent.components.finiteuses == nil or moduleent.components.finiteuses:GetUses() > 1 then
+        if moduleent.components.inventoryitem ~= nil and inst.components.inventory ~= nil then
+            inst.components.inventory:GiveItem(moduleent, nil, inst:GetPosition())
+        end
+    end
+end
+
+local function OnOneUpgradeModulePopped(inst, moduleent)
+    inst:PushEvent("upgrademodulesdirty", get_plugged_module_indexes(inst))
+    if inst.player_classified ~= nil then
+        -- This is a callback of the remove, so our current NumModules should be
+        -- 1 lower than the index of the module that was just removed.
+        local top_module_index = inst.components.upgrademoduleowner:NumModules() + 1
+        inst.player_classified.upgrademodules[top_module_index]:set(0)
+    end
+end
+
+local function OnAllUpgradeModulesRemoved(inst)
+    SpawnPrefab("wx78_big_spark"):AlignToTarget(inst)
+
+    inst:PushEvent("upgrademoduleowner_popallmodules")
+
+    if inst.player_classified ~= nil then
+        inst.player_classified.upgrademodules[1]:set(0)
+        inst.player_classified.upgrademodules[2]:set(0)
+        inst.player_classified.upgrademodules[3]:set(0)
+        inst.player_classified.upgrademodules[4]:set(0)
+        inst.player_classified.upgrademodules[5]:set(0)
+        inst.player_classified.upgrademodules[6]:set(0)
+    end
+end
+
+local function CanUseUpgradeModule(inst, moduleent)
+    if (TUNING.WX78_MAXELECTRICCHARGE - inst._chip_inuse) < moduleent.components.upgrademodule.slots then
+        return false, "NOTENOUGHSLOTS"
+    else
+        return true
+    end
+end
+
+local WX78ModuleDefinitionFile = require("wx78_moduledefs")
+local GetWX78ModuleByNetID = WX78ModuleDefinitionFile.GetModuleDefinitionFromNetID
+
+local function CLIENT_CanUpgradeWithModule(inst, module_prefab)
+    if module_prefab == nil then
+        return false
+    end
+
+    local slots_inuse = (module_prefab._slots or 0)
+
+    if inst.components.upgrademoduleowner ~= nil then
+        for _, module in ipairs(inst.components.upgrademoduleowner.modules) do
+            local modslots = (module.components.upgrademodule ~= nil and module.components.upgrademodule.slots)
+                or 0
+            slots_inuse = slots_inuse + modslots
+        end
+    elseif inst.player_classified ~= nil then
+        for _, module_netvar in ipairs(inst.player_classified.upgrademodules) do
+            local module_definition = GetWX78ModuleByNetID(module_netvar:value())
+            if module_definition ~= nil then
+                slots_inuse = slots_inuse + module_definition.slots
+            end
+        end
+    else
+        return false
+    end
+
+    return (TUNING.WX78_MAXELECTRICCHARGE - slots_inuse) >= 0
+end
+
+local function CLIENT_CanRemoveModules(inst)
+    if inst.components.upgrademoduleowner ~= nil then
+        return inst.components.upgrademoduleowner:NumModules() > 0
+    elseif inst.player_classified ~= nil then
+        -- Assume that, if the first module slot netvar is 0, we have no modules.
+        return inst.player_classified.upgrademodules[1]:value() ~= 0
+    else
+        return false
+    end
+end
+
 local function WX78Init(inst)
+    if not TheWorld.ismastersim then
+        return inst
+    end
+
     if inst.prefab ~= "wx78" then return end
 
-    inst:AddComponent("timer")
-    inst:AddComponent("upgrademoduleowner")
+    if inst.components.timer == nil then
+        inst:AddComponent("timer")
+    end
+    if inst.components.upgrademoduleowner == nil then
+        inst:AddComponent("upgrademoduleowner")
+    end
+    inst.components.upgrademoduleowner.onmoduleadded = OnUpgradeModuleAdded
+    inst.components.upgrademoduleowner.onmoduleremoved = OnUpgradeModuleRemoved
+    inst.components.upgrademoduleowner.ononemodulepopped = OnOneUpgradeModulePopped
+    inst.components.upgrademoduleowner.onallmodulespopped = OnAllUpgradeModulesRemoved
+    inst.components.upgrademoduleowner.canupgradefn = CanUseUpgradeModule
     inst.components.upgrademoduleowner:SetChargeLevel(0)
     inst.charge_regentime = TUNING.WX78_CHARGE_REGENTIME
+
+    inst.CanUpgradeWithModule = CLIENT_CanUpgradeWithModule
+    inst.CanRemoveModules = CLIENT_CanRemoveModules
+
     inst:ListenForEvent("itemget", UpdateChargeRegenTime)
     inst:ListenForEvent("itemlose", UpdateChargeRegenTime)
-
     inst:ListenForEvent("custom_inspiration_release", OnInspirationRelease)
-
     inst:ListenForEvent("energylevelupdate", OnUpgradeModuleChargeChanged)
-
     inst:ListenForEvent("ms_respawnedfromghost", OnBecameRobot)
     OnBecameRobot(inst)
 

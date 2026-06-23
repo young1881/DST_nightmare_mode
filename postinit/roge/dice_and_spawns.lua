@@ -1,0 +1,2 @@
+-- 已废弃：逻辑已合并至 roll.lua + boss_pool.lua，init.lua 不再加载本文件。
+-- 若手动 import 会与 roll.lua 冲突，请勿启用。

@@ -1,0 +1,24 @@
+# IDE / editor
+.cursor/
+.vscode/
+*.code-workspace
+*.swp
+*~
+
+# Local recovery and dev scratch
+_recovered/
+exported/
+
+# Dev helper scripts (not part of the mod runtime)
+_extract_patches.js
+_search_keys.js
+
+# OS junk
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs and temp files
+*.log
+*.tmp
+*.bak

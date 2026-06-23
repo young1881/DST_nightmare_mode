@@ -37,14 +37,15 @@ AddRecipePostInit("wx78module_spin", function(recipe)
     }
 end)
 
--- 格挡电路：尖壳蜗牛头盔 → 1大理石甲 + 1铥矿甲
-AddRecipePostInit("wx78module_block", function(recipe)
-    recipe.ingredients = {
-        Ingredient("scandata", 8),
-        Ingredient("armormarble", 1),
-        Ingredient("armorruins", 1),
-    }
-end)
+-- WX-78 专属：8 壳碎片 + 1 花环 → 尖壳头盔（用于格挡电路等材料）
+AddCharacterRecipe("slurtlehat_wx78",
+    { Ingredient("slurtle_shellpieces", 8), Ingredient("flowerhat", 1) },
+    TECH.SCIENCE_TWO,
+    {
+        product = "slurtlehat",
+        builder_tag = "upgrademoduleowner",
+    },
+    { "ARMOUR" })
 
 AddPrefabPostInit("archive_centipede_husk", function(inst)
     if not inst:HasTag("largecreature") then
@@ -513,22 +514,6 @@ local function NM_CanSpinUsingItem(item)
     return NM_IsSpinTool(item) or NM_IsMeleeWeapon(item)
 end
 
-local function NM_SetSpinAttackRange(wx, override)
-    if wx ~= nil and wx.components ~= nil and wx.components.combat ~= nil then
-        wx.components.combat:SetRange(override or TUNING.DEFAULT_ATTACK_RANGE, wx.components.combat.hitrange)
-    end
-end
-
-local function NM_CheckSpinTool(wx, data)
-    if data ~= nil and data.eslot ~= EQUIPSLOTS.HANDS then
-        return
-    end
-
-    local inventory = wx ~= nil and wx.components ~= nil and wx.components.inventory or nil
-    local item = inventory ~= nil and inventory:GetEquippedItem(EQUIPSLOTS.HANDS) or nil
-    NM_SetSpinAttackRange(wx, NM_IsSpinTool(item) and TUNING.WX78_SPIN_START_RANGE or nil)
-end
-
 local function NM_EnsureSpinComponents(wx)
     if wx == nil or TheWorld == nil or not TheWorld.ismastersim or wx.components == nil then
         return
@@ -541,14 +526,6 @@ local function NM_EnsureSpinComponents(wx)
     if wx.components.aoediminishingreturns == nil then
         wx:AddComponent("aoediminishingreturns")
     end
-
-    if not wx._nm_wx_spin_tool_listener then
-        wx._nm_wx_spin_tool_listener = true
-        wx:ListenForEvent("equip", NM_CheckSpinTool)
-        wx:ListenForEvent("unequip", NM_CheckSpinTool)
-    end
-
-    NM_CheckSpinTool(wx)
 end
 
 local function NM_GetLocalAnalogDir(inst)
@@ -568,6 +545,9 @@ end
 
 local function NM_WXSpinOnUpdate(inst, dt)
     if not NM_HasSpinAbility(inst) then
+        if inst.components.combat ~= nil then
+            inst.components.combat.ignorehitrange = false
+        end
         if inst.sg.statemem.anim ~= nil then
             inst.AnimState:PlayAnimation(inst.sg.statemem.anim)
             inst.AnimState:SetFrame(1)
@@ -941,6 +921,17 @@ local function NM_PatchSpinStateGraph(sg)
     local state = sg ~= nil and sg.states ~= nil and sg.states.wx_spin or nil
     if state ~= nil and not state._nm_melee_spin_onupdate_patched then
         state.onupdate = NM_WXSpinOnUpdate
+
+        local old_onexit = state.onexit
+        state.onexit = function(inst)
+            if inst.components.combat ~= nil then
+                inst.components.combat.ignorehitrange = false
+            end
+            if old_onexit ~= nil then
+                old_onexit(inst)
+            end
+        end
+
         state._nm_melee_spin_onupdate_patched = true
     end
 end
@@ -950,7 +941,10 @@ local function NM_PatchPickActionHandler(sg)
     if handler ~= nil and not handler._nm_spin_pick_tool_only_patched then
         local old_deststate = handler.deststate
         handler.deststate = function(inst, action)
-            return NM_CallWithCanSpinUsingItem(NM_IsSpinTool, old_deststate, inst, action)
+            if inst.prefab ~= "wx78" or not NM_HasSpinAbility(inst) then
+                return old_deststate(inst, action)
+            end
+            return NM_CallWithCanSpinUsingItem(NM_CanSpinUsingItem, old_deststate, inst, action)
         end
 
         handler._nm_spin_pick_tool_only_patched = true
@@ -970,7 +964,13 @@ end
 local function NM_PatchHammerActionHandler(sg)
     local handler = sg ~= nil and sg.actionhandlers ~= nil and sg.actionhandlers[ACTIONS.HAMMER] or nil
     if handler ~= nil and not handler._nm_spin_hammer_disabled then
-        handler.deststate = NM_HammerDestState
+        local old_deststate = handler.deststate
+        handler.deststate = function(inst, action)
+            if inst.prefab ~= "wx78" or not NM_HasSpinAbility(inst) then
+                return old_deststate(inst, action)
+            end
+            return NM_HammerDestState(inst)
+        end
         handler._nm_spin_hammer_disabled = true
     end
 end

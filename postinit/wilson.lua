@@ -450,5 +450,5 @@ AddRecipe2("alterguardianhatshard_wilson",
 		product = "alterguardianhatshard",
 		builder_tag = "nm_wilson_exclusive",
 	},
-	{ "REFINE" })
+	{ "CHARACTER" })
 STRINGS.RECIPE_DESC.ALTERGUARDIANHATSHARD_WILSON = "科学家专属的启迪炼制方式"

@@ -504,6 +504,34 @@ AddComponentPostInit("maprevealer", function(self)
 	end
 end)
 
+AddComponentPostInit("maprevealable", function(self)
+	local old_add = self.AddRevealSource
+	function self:AddRevealSource(source, restriction)
+		if IsWebberPlayer(self.inst) and restriction == nil then
+			restriction = WEBBER_GPS_PEER_TAG
+		end
+		return old_add(self, source, restriction)
+	end
+
+	local old_refresh = self.Refresh
+	function self:Refresh(...)
+		if IsWebberPlayer(self.inst) then
+			if self.task ~= nil then
+				if GetClosestInstWithTag({ "maprevealer" }, self.inst, PLAYER_REVEAL_RADIUS) ~= nil then
+					self:AddRevealSource("maprevealer", WEBBER_GPS_PEER_TAG)
+				else
+					self:RemoveRevealSource("maprevealer")
+				end
+			end
+			if self.onrefreshfn ~= nil then
+				self.onrefreshfn(self.inst)
+			end
+			return
+		end
+		return old_refresh(self, ...)
+	end
+end)
+
 --全图定位
 AddPlayerPostInit(function(inst)
 	inst:AddTag("compassbearer")
@@ -514,6 +542,7 @@ AddPlayerPostInit(function(inst)
 		inst:AddComponent("maprevealer")
 		if inst.components.maprevealable ~= nil then
 			inst.components.maprevealable:AddRevealSource(inst, WEBBER_GPS_PEER_TAG)
+			inst.components.maprevealable:RefreshRevealSources()
 		end
 		return
 	end

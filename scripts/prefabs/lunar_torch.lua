@@ -147,16 +147,36 @@ local function WatchSkillRefresh(inst, owner)
 	end
 end
 
-local function ignitecoldfire(inst, target)
+local function ignitecoldfire(inst, target, fx_only)
 	if target and target:IsValid() and (target.components.health == nil or not target.components.health:IsDead() and not target:HasTag("structure") and not target:HasTag("wall")) then
 		if inst.components.weapon then
 			local projectile = SpawnPrefab("lunar_torch_projectile")
 			projectile.entity:SetParent(target.entity)
 			projectile.Transform:SetPosition(0, 0.2, 0)
 			projectile.target = target
-			-- print("finish projectile Spawn")
+			projectile._nm_fx_only = fx_only == true
 		end
 	end
+end
+
+local function ExtinguishTargetBurn(target)
+	if target == nil or not target:IsValid() or target.components.burnable == nil then
+		return
+	end
+	if target.components.burnable:IsBurning() then
+		target.components.burnable:Extinguish()
+	elseif target.components.burnable:IsSmoldering() then
+		target.components.burnable:SmotherSmolder()
+	end
+end
+
+local function ApplyLunarTorchThrowFreeze(target)
+	if target == nil or not target:IsValid() or target.components.freezable == nil then
+		return
+	end
+	ExtinguishTargetBurn(target)
+	target.components.freezable:AddColdness(lunarTorchThrowFreezeColdness)
+	target.components.freezable:SpawnShatterFX()
 end
 
 local AOE_RADIUS = 5.5
@@ -179,15 +199,12 @@ local function DoOnHitAOE(inst, pt, targets, consumefuel, damage, planar_damage)
 			inst.components.combat:DoAttack(v)
 			inst.components.combat:SetDefaultDamage(0)
 			inst.components.planardamage:SetBaseDamage(0)
-			ignitecoldfire(inst, v)
 			if wasfrozen then
 				v:PushEvent("knockback", { knocker = inst, radius = dist + 5.5 })
 			else
-				if v.components.freezable ~= nil and v:IsValid() then
-					v.components.freezable:AddColdness(lunarTorchThrowFreezeColdness)
-					v.components.freezable:SpawnShatterFX()
-				end
+				ApplyLunarTorchThrowFreeze(v)
 			end
+			ignitecoldfire(inst, v, true)
 			targets[v] = true
 			if v:HasTag("epic") then
 				sumconsumefuel = sumconsumefuel + consumefuel * 1.2

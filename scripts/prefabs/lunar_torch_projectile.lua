@@ -46,14 +46,17 @@ local function boomfx(inst)
 end
 
 local function attack_behaviour(inst)
-    if inst.components.combat ~= nil then
-        if inst.components.combat:CanTarget(inst.target) then
-            inst.components.combat:DoAttack(inst.target)
-            return true
-        else
-            return false
-        end
-    end
+	if inst.components.combat ~= nil then
+		if inst.components.combat:CanTarget(inst.target) then
+			if inst._nm_fx_only then
+				return true
+			end
+			inst.components.combat:DoAttack(inst.target)
+			return true
+		else
+			return false
+		end
+	end
 end
 
 local function on_anim_over(inst)

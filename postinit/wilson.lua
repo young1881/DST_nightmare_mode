@@ -1,6 +1,315 @@
 UPGRADETYPES.TORCH = "torch"
 UPGRADETYPES.LUNAR_TORCH = "lunar_torch"
 
+local containers = require("containers")
+
+local function WilsonBeardSackItemTestFn(container, item, slot)
+	return not (item:HasTag("irreplaceable")
+		or item:HasTag("_container")
+		or item:HasTag("bundle")
+		or item:HasTag("nobundling"))
+end
+
+for _, sack in ipairs({ "beard_sack_1", "beard_sack_2", "beard_sack_3" }) do
+	containers.params[sack].itemtestfn = WilsonBeardSackItemTestFn
+end
+
+local Beard = require("components/beard")
+local Inventory = require("components/inventory")
+local Container = require("components/container")
+
+local BEARD_SACK_TAGS = {
+	beard_sack_1 = true,
+	beard_sack_2 = true,
+	beard_sack_3 = true,
+}
+
+local function IsWilsonBeardSack(inst)
+	return inst ~= nil and (
+		BEARD_SACK_TAGS[inst.prefab] == true
+		or inst:HasTag("beard_sack_1")
+		or inst:HasTag("beard_sack_2")
+		or inst:HasTag("beard_sack_3")
+	)
+end
+
+local function GetWilsonOwnerOfBeardSack(sack)
+	if sack == nil or not sack:IsValid() then
+		return nil
+	end
+	local owner = sack.components.inventoryitem ~= nil and sack.components.inventoryitem:GetGrandOwner() or nil
+	if owner ~= nil and owner:IsValid() and owner.prefab == "wilson" then
+		return owner
+	end
+	if TheWorld ~= nil and TheWorld.ismastersim then
+		for _, player in ipairs(AllPlayers) do
+			if player.prefab == "wilson" and player.components.inventory ~= nil then
+				if player.components.inventory:GetEquippedItem(EQUIPSLOTS.BEARD) == sack then
+					return player
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function ShouldPreserveWilsonBeard(owner)
+	if owner == nil or not owner:IsValid() or owner.prefab ~= "wilson" then
+		return false
+	end
+	if owner._nm_preserve_beard then
+		return true
+	end
+	if owner:HasTag("playerghost") then
+		return true
+	end
+	local health = owner.components.health
+	return health ~= nil and health:IsDead()
+end
+
+local function WilsonBeardSackOwnerPreserves(sack)
+	if not IsWilsonBeardSack(sack) then
+		return false
+	end
+	return ShouldPreserveWilsonBeard(GetWilsonOwnerOfBeardSack(sack))
+end
+
+local function SnapshotWilsonBeardSackItems(inst)
+	local sack = inst.components.inventory ~= nil
+		and inst.components.inventory:GetEquippedItem(EQUIPSLOTS.BEARD) or nil
+	if sack == nil or sack.components.container == nil then
+		inst._nm_beard_sack_items = nil
+		return
+	end
+	inst._nm_beard_sack_items = {}
+	for slot, item in pairs(sack.components.container.slots) do
+		if item ~= nil and item:IsValid() then
+			inst._nm_beard_sack_items[slot] = item
+		end
+	end
+end
+
+local function RestoreWilsonBeardSackItems(inst)
+	if inst._nm_beard_sack_items == nil then
+		return
+	end
+	local sack = inst.components.inventory ~= nil
+		and inst.components.inventory:GetEquippedItem(EQUIPSLOTS.BEARD) or nil
+	if sack == nil or sack.components.container == nil then
+		return
+	end
+	local container = sack.components.container
+	for slot, item in pairs(inst._nm_beard_sack_items) do
+		if item ~= nil and item:IsValid() and container:GetItemInSlot(slot) ~= item then
+			if item.components.inventoryitem ~= nil then
+				if item.components.inventoryitem.owner ~= sack then
+					item.components.inventoryitem:SetOwner(nil)
+				end
+			end
+			container:GiveItem(item, slot, nil, true)
+		end
+	end
+end
+
+local function SnapshotWilsonBeard(inst)
+	local beard = inst.components.beard
+	if beard == nil then
+		return
+	end
+	inst._nm_beard_snapshot = {
+		daysgrowth = beard.daysgrowth,
+		daysgrowthaccumulator = beard.daysgrowthaccumulator,
+		bits = beard.bits,
+		skinname = beard.skinname,
+	}
+	inst._nm_preserve_beard = true
+	SnapshotWilsonBeardSackItems(inst)
+end
+
+local function RestoreWilsonBeardVisual(inst)
+	local beard = inst.components.beard
+	if beard == nil then
+		return
+	end
+	local snap = inst._nm_beard_snapshot
+	if snap ~= nil then
+		if snap.daysgrowth ~= nil and beard.daysgrowth < snap.daysgrowth then
+			beard.daysgrowth = snap.daysgrowth
+		end
+		if snap.daysgrowthaccumulator ~= nil then
+			beard.daysgrowthaccumulator = snap.daysgrowthaccumulator
+		end
+		if snap.bits ~= nil and beard.bits < snap.bits then
+			beard.bits = snap.bits
+		end
+		if snap.skinname ~= nil then
+			beard.skinname = snap.skinname
+		end
+	end
+	for day = 0, beard.daysgrowth do
+		local cb = beard.callbacks[day]
+		if cb ~= nil then
+			cb(inst, beard.skinname)
+		end
+	end
+	if beard.UpdateBeardInventory ~= nil then
+		beard:UpdateBeardInventory()
+	end
+	RestoreWilsonBeardSackItems(inst)
+end
+
+local function MarkWilsonBeardDeath(inst)
+	if inst.prefab ~= "wilson" or not TheWorld.ismastersim then
+		return
+	end
+	RestoreWilsonBeardSackItems(inst)
+	inst:DoTaskInTime(0, function()
+		if inst:IsValid() then
+			RestoreWilsonBeardVisual(inst)
+		end
+	end)
+end
+
+local function GuardWilsonBeardSackContainerMethod(method_name)
+	local old_fn = Container[method_name]
+	if old_fn == nil or Container["_nm_old_" .. method_name] ~= nil then
+		return
+	end
+	Container["_nm_old_" .. method_name] = old_fn
+	Container[method_name] = function(self, ...)
+		if WilsonBeardSackOwnerPreserves(self.inst) then
+			if method_name == "RemoveAllItems" then
+				return {}
+			end
+			return nil
+		end
+		return old_fn(self, ...)
+	end
+end
+
+GuardWilsonBeardSackContainerMethod("DropEverything")
+GuardWilsonBeardSackContainerMethod("DropItemBySlot")
+GuardWilsonBeardSackContainerMethod("DropItem")
+GuardWilsonBeardSackContainerMethod("RemoveAllItems")
+GuardWilsonBeardSackContainerMethod("DropEverythingWithTag")
+GuardWilsonBeardSackContainerMethod("DropEverythingByFilter")
+
+local _BeardReset = Beard.Reset
+function Beard:Reset()
+	local inst = self.inst
+	if inst ~= nil and inst.prefab == "wilson" and not inst._nm_allows_beard_reset then
+		return
+	end
+	return _BeardReset(self)
+end
+
+local _BeardShave = Beard.Shave
+function Beard:Shave(who, withwhat)
+	local inst = self.inst
+	if inst ~= nil and inst.prefab == "wilson" then
+		inst._nm_allows_beard_reset = true
+	end
+	local pass, reason = _BeardShave(self, who, withwhat)
+	if inst ~= nil and inst.prefab == "wilson" then
+		inst._nm_allows_beard_reset = false
+	end
+	return pass, reason
+end
+
+local _InventoryDropEverything = Inventory.DropEverything
+function Inventory:DropEverything(ondeath, keepequip)
+	local owner = self.inst
+	if owner.prefab == "wilson" and ondeath then
+		SnapshotWilsonBeard(owner)
+		local old_empty = owner.EmptyBeard
+		owner.EmptyBeard = function() end
+		_InventoryDropEverything(self, ondeath, keepequip)
+		owner.EmptyBeard = old_empty
+		owner:DoTaskInTime(0, function()
+			if owner:IsValid() then
+				RestoreWilsonBeardVisual(owner)
+			end
+		end)
+		return
+	end
+	return _InventoryDropEverything(self, ondeath, keepequip)
+end
+
+local function ProtectWilsonBeardSack(inst)
+	if inst._nm_beard_sack_protected then
+		return
+	end
+	inst._nm_beard_sack_protected = true
+
+	if not TheWorld.ismastersim then
+		return
+	end
+
+	if inst.components.inventoryitem ~= nil then
+		inst.components.inventoryitem.keepondeath = true
+	end
+
+	local old_remove = inst.Remove
+	inst.Remove = function(sack, ...)
+		if WilsonBeardSackOwnerPreserves(sack) then
+			return
+		end
+		return old_remove(sack, ...)
+	end
+end
+
+for _, sack in ipairs({ "beard_sack_1", "beard_sack_2", "beard_sack_3" }) do
+	AddPrefabPostInit(sack, ProtectWilsonBeardSack)
+end
+
+AddComponentPostInit("skinner", function(self)
+	if self.inst.prefab ~= "wilson" then
+		return
+	end
+	local inst = self.inst
+	local old_set_skin_mode = self.SetSkinMode
+	self.SetSkinMode = function(skinner, skintype, default_build)
+		old_set_skin_mode(skinner, skintype, default_build)
+		if TheWorld.ismastersim then
+			inst:DoTaskInTime(0, RestoreWilsonBeardVisual)
+		end
+	end
+end)
+
+AddPrefabPostInit("wilson", function(inst)
+	if not TheWorld.ismastersim then
+		return
+	end
+
+	inst.EmptyBeard = function() end
+
+	inst:ListenForEvent("pre_health_setval", function(_, data)
+		if data == nil or data.old_health == nil or data.old_health <= 0 or data.val == nil then
+			return
+		end
+		local health = inst.components.health
+		if health == nil then
+			return
+		end
+		local min_health = math.min(health.minhealth or 0, health:GetMaxWithPenalty())
+		if data.val <= min_health then
+			SnapshotWilsonBeard(inst)
+		end
+	end)
+
+	inst:ListenForEvent("death", MarkWilsonBeardDeath)
+	inst:ListenForEvent("makeplayerghost", MarkWilsonBeardDeath)
+
+	inst:ListenForEvent("ms_becameghost", function()
+		inst:DoTaskInTime(0, RestoreWilsonBeardVisual)
+	end)
+
+	inst:ListenForEvent("ms_respawnedfromghost", function()
+		inst._nm_preserve_beard = nil
+		inst:DoTaskInTime(0, RestoreWilsonBeardVisual)
+	end)
+end)
+
 AddPrefabPostInit("wilson", function(inst)
     inst:AddTag("fastbuilder")
     inst:AddTag("nm_wilson_exclusive")

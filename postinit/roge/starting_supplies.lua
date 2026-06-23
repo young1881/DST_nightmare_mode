@@ -1,4 +1,10 @@
 -- roge/starting_supplies.lua
+local ROGE_COMMON_SCRAPHAT = {
+    prefab = "scraphat",
+    min_condition = 45,
+    max_condition = 86,
+}
+
 local STARTING_SUPPLY_OPTIONS = {
     {
         prefab = "wortox",
@@ -128,6 +134,44 @@ function SetupRogeStartingSupplies(inst, option)
         AddStartingInventoryItems(inst, option.items)
     end
 end
+
+function ApplyRogeScraphatDurability(inst)
+    if inst == nil or inst.components.inventory == nil then
+        return
+    end
+
+    local hat = inst.components.inventory:FindItem(function(item)
+        return item ~= nil and item.prefab == ROGE_COMMON_SCRAPHAT.prefab
+    end)
+    if hat ~= nil and hat.components.armor ~= nil then
+        hat.components.armor:SetCondition(math.random(
+            ROGE_COMMON_SCRAPHAT.min_condition,
+            ROGE_COMMON_SCRAPHAT.max_condition
+        ))
+    end
+end
+
+function SetupRogeCommonStartingSupplies(inst)
+    if TheWorld == nil or not TheWorld.ismastersim then
+        return
+    end
+
+    AddStartingInventoryItems(inst, {
+        { prefab = ROGE_COMMON_SCRAPHAT.prefab, count = 1, unique = true },
+    })
+
+    local old_on_new_spawn = inst._OnNewSpawn
+    inst._OnNewSpawn = function()
+        ApplyRogeScraphatDurability(inst)
+        if old_on_new_spawn ~= nil then
+            old_on_new_spawn()
+        end
+    end
+end
+
+AddPlayerPostInit(function(inst)
+    SetupRogeCommonStartingSupplies(inst)
+end)
 
 for _, option_def in ipairs(STARTING_SUPPLY_OPTIONS) do
     local option = option_def

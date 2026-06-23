@@ -37,12 +37,11 @@ AddRecipePostInit("wx78module_spin", function(recipe)
     }
 end)
 
--- 格挡电路
+-- 格挡电路：尖壳蜗牛头盔 → 1大理石甲 + 1铥矿甲
 AddRecipePostInit("wx78module_block", function(recipe)
     recipe.ingredients = {
         Ingredient("scandata", 8),
         Ingredient("armormarble", 1),
-        Ingredient("marble", 10),
         Ingredient("armorruins", 1),
     }
 end)

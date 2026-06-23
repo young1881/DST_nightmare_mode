@@ -9,15 +9,16 @@ local PARRY_DURATION = 5.5
 local PARRY_COOLDOWN = 8
 local PARRY_CD_ON_BLOCK = 0.7
 local PARRY_EQUIP_LOCK = 2
-local DREADSTONE_REPAIR_PERCENT = 0.30
+local HORRORFUEL_REPAIR_ITEM = "horrorfuel"
+local HORRORFUEL_REPAIR_PERCENT = 0.10
 
 local SWORDMASTER_CRIT_CHANCE = 0.5
-local TRACKING_AOE_RADIUS = 6
-local TRACKING_FAN_ANGLE = 80 * DEGREES
+local TRACKING_AOE_RADIUS = 4
+local TRACKING_FAN_ANGLE = 60 * DEGREES
 local BULWARK_DAMAGE_MULT = 0.75
 local BULWARK_PLANAR_DEF = 10
 local DEATHSONG_MAX_HEALTH_MULT = 0.25
-local DEATHSONG_LIFESTEAL = 2
+local DEATHSONG_LIFESTEAL = 3
 local SMITH_PLANAR_BONUS = 20
 
 local VARIANTS = {
@@ -112,6 +113,58 @@ end
 
 local function IsUpgradedDreadsword(inst)
 	return IsKinglyDreadsword(inst) or IsRevivalDreadsword(inst)
+end
+
+local function GetDreadswordUpgradeKey(inst)
+	if inst == nil then
+		return nil
+	end
+	if inst.nameoverride ~= nil and inst.nameoverride ~= "" then
+		return inst.nameoverride
+	end
+	if inst.replica ~= nil and inst.replica.inspectable ~= nil then
+		if inst.replica.inspectable.GetNameOverride ~= nil then
+			local override = inst.replica.inspectable:GetNameOverride()
+			if override ~= nil and override ~= "" then
+				return override
+			end
+		end
+		local classified = inst.replica.inspectable.classified
+		if classified ~= nil and classified.nameoverride ~= nil then
+			local override = classified.nameoverride:value()
+			if override ~= nil and override ~= "" then
+				return override
+			end
+		end
+	end
+	return nil
+end
+
+local function IsDreadswordUpgradeKey(key)
+	return key ~= nil and key ~= "" and key ~= "dreadsword"
+		and string.sub(key, 1, 10) == "dreadsword"
+end
+
+-- 服务端 AddTag 不会同步到客户端，修复/给予动作需额外依据名称或本地应用状态判断
+local function IsUpgradedDreadswordForAction(inst)
+	if IsUpgradedDreadsword(inst) then
+		return true
+	end
+	if inst._nm_revival_parry_applied or inst._nm_kingly_applied then
+		return true
+	end
+	return IsDreadswordUpgradeKey(GetDreadswordUpgradeKey(inst))
+end
+
+local function DreadswordNeedsRepair(target)
+	if target.replica ~= nil and target.replica.finiteuses ~= nil then
+		return target.replica.finiteuses:GetPercent() < 1
+	end
+	if target.components ~= nil and target.components.finiteuses ~= nil then
+		return target.components.finiteuses:GetPercent() < 1
+	end
+	-- 客户端可能暂时没有 finiteuses replica，交给服务端 trader 校验
+	return not TheWorld.ismastersim
 end
 
 local function GetEquippedHandsItem(owner)
@@ -407,6 +460,38 @@ local function EnsureParryAoetargeting(inst)
 	end
 end
 
+local AddRevivalParryComponents
+local ApplyKinglyUpgrade
+local ClientApplyUpgradedDreadswordFromPlayer
+
+local function ApplyDreadswordUpgradeOnClient(sword_guid, variant_id)
+	if TheWorld.ismastersim then
+		return
+	end
+	local sword = sword_guid ~= nil and Ents[sword_guid] or nil
+	if sword == nil or not sword:IsValid() or sword.prefab ~= DREADSWORD_PREFAB then
+		if ClientApplyUpgradedDreadswordFromPlayer ~= nil then
+			ClientApplyUpgradedDreadswordFromPlayer(ThePlayer)
+		end
+		return
+	end
+	if variant_id == "revival" then
+		AddRevivalParryComponents(sword)
+	elseif variant_id ~= nil and variant_id ~= "" then
+		ApplyKinglyUpgrade(sword, variant_id)
+	end
+end
+
+local function NotifyClientDreadswordUpgradeSync(sword, giver, variant_id)
+	if not TheWorld.ismastersim or giver == nil or giver.userid == nil or sword == nil then
+		return
+	end
+	if MOD_RPC["my_mod"] == nil or MOD_RPC["my_mod"]["dreadsword_upgrade_sync"] == nil then
+		return
+	end
+	SendModRPCToClient(MOD_RPC["my_mod"]["dreadsword_upgrade_sync"], giver.userid, sword.GUID, variant_id or "revival")
+end
+
 local function NotifyClientRevivalParrySync(inst, owner)
 	if not TheWorld.ismastersim or owner == nil or owner.userid == nil then
 		return
@@ -552,6 +637,15 @@ local function SetupParryVariant(inst)
 	SyncParryTargeting(inst)
 end
 
+local function GetDreadswordAttackDamage(weapon)
+	local physical = weapon.components.weapon ~= nil and weapon.components.weapon.damage or 0
+	local planar = 0
+	if weapon.components.planardamage ~= nil then
+		planar = weapon.components.planardamage:GetBaseDamage() or 0
+	end
+	return physical, planar
+end
+
 local function SwordmasterOnAttack(weapon, attacker, target)
 	if target == nil or not target:IsValid() or target.components.combat == nil then
 		return
@@ -560,10 +654,12 @@ local function SwordmasterOnAttack(weapon, attacker, target)
 		return
 	end
 
-	local bonus = weapon.components.weapon ~= nil and weapon.components.weapon.damage or 0
-	if bonus > 0 then
-		target.components.combat:GetAttacked(attacker, bonus, weapon)
+	local physical, planar = GetDreadswordAttackDamage(weapon)
+	if physical <= 0 and planar <= 0 then
+		return
 	end
+	local spdamage = planar > 0 and { planar = planar } or nil
+	target.components.combat:GetAttacked(attacker, physical, weapon, nil, spdamage)
 end
 
 local function SetupSwordmasterVariant(inst)
@@ -820,7 +916,6 @@ local function ApplyRevivalStrings(inst)
 	end
 end
 
-local AddRevivalParryComponents
 local SetupKinglyTrader
 
 local function PatchRevivalEquippable(inst)
@@ -891,8 +986,6 @@ AddRevivalParryComponents = function(inst)
 	end
 end
 
-local ApplyKinglyUpgrade
-
 SetupKinglyTrader = function(inst)
 	-- 客户端也需要 trader 标签，否则 AddComponentAction 不会显示「给予」升级/修复
 	inst:AddTag("trader")
@@ -910,7 +1003,7 @@ SetupKinglyTrader = function(inst)
 			return false
 		end
 		if IsRevivalDreadsword(sword) or IsKinglyDreadsword(sword) then
-			if item.prefab ~= "dreadstone" then
+			if item.prefab ~= HORRORFUEL_REPAIR_ITEM then
 				return false
 			end
 			if sword.components.finiteuses == nil then
@@ -936,6 +1029,7 @@ SetupKinglyTrader = function(inst)
 				giver.components.talker:Say("以勇者的证明，为绝望之刃注能！")
 			end
 			if giver ~= nil and giver.userid ~= nil then
+				NotifyClientDreadswordUpgradeSync(sword, giver, "revival")
 				NotifyClientRevivalParrySync(sword, giver)
 			end
 		elseif item.prefab == UPGRADE_GEM and not IsUpgradedDreadsword(sword) then
@@ -944,17 +1038,20 @@ SetupKinglyTrader = function(inst)
 			if giver ~= nil and giver.components.talker ~= nil then
 				giver.components.talker:Say(GetKinglyVariantName(variant_id) .. "！")
 			end
-			if variant_id == "parry" and giver ~= nil and giver.userid ~= nil then
-				NotifyClientParrySync(sword, giver)
+			if giver ~= nil and giver.userid ~= nil then
+				NotifyClientDreadswordUpgradeSync(sword, giver, variant_id)
+				if variant_id == "parry" then
+					NotifyClientParrySync(sword, giver)
+				end
 			end
-		elseif item.prefab == "dreadstone" and IsUpgradedDreadsword(sword)
+		elseif item.prefab == HORRORFUEL_REPAIR_ITEM and IsUpgradedDreadsword(sword)
 			and sword.components.finiteuses ~= nil then
-			sword.components.finiteuses:Repair(sword.components.finiteuses.total * DREADSTONE_REPAIR_PERCENT)
+			sword.components.finiteuses:Repair(sword.components.finiteuses.total * HORRORFUEL_REPAIR_PERCENT)
 			if giver ~= nil and giver.components.talker ~= nil then
-				giver.components.talker:Say("绝望石修补了剑刃。")
+				giver.components.talker:Say("纯粹恐惧修补了剑刃。")
 			end
 			if giver ~= nil and giver.SoundEmitter ~= nil then
-				giver.SoundEmitter:PlaySound("dontstarve/wilson/hit_dreadstone")
+				giver.SoundEmitter:PlaySound("dontstarve/common/nightmareAddFuel")
 			end
 		end
 	end)
@@ -1005,16 +1102,33 @@ ApplyKinglyUpgrade = function(inst, variant_id)
 	end
 end
 
-local function ClientApplyUpgradedDreadswordFromPlayer(player)
+ClientApplyUpgradedDreadswordFromPlayer = function(player)
 	if player == nil or player.replica.inventory == nil then
 		return
 	end
-	local weapon = player.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
-	if weapon ~= nil and weapon:IsValid() and weapon.prefab == DREADSWORD_PREFAB then
-		if weapon:HasTag(REVIVAL_TAG) then
+	local function TryApply(weapon)
+		if weapon == nil or not weapon:IsValid() or weapon.prefab ~= DREADSWORD_PREFAB then
+			return
+		end
+		if weapon:HasTag(REVIVAL_TAG) or GetDreadswordUpgradeKey(weapon) == "dreadsword_revival" then
 			AddRevivalParryComponents(weapon)
-		elseif IsKinglyDreadsword(weapon) then
-			ApplyKinglyUpgrade(weapon, GetKinglyVariantId(weapon) or weapon._nm_kingly_variant)
+			return
+		end
+		local variant_id = GetKinglyVariantId(weapon) or weapon._nm_kingly_variant
+		if variant_id == nil then
+			local key = GetDreadswordUpgradeKey(weapon)
+			if IsDreadswordUpgradeKey(key) then
+				variant_id = string.sub(key, 12)
+			end
+		end
+		if variant_id ~= nil then
+			ApplyKinglyUpgrade(weapon, variant_id)
+		end
+	end
+	TryApply(player.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS))
+	if player.replica.inventory.GetItems ~= nil then
+		for _, item in pairs(player.replica.inventory:GetItems()) do
+			TryApply(item)
 		end
 	end
 end
@@ -1023,16 +1137,23 @@ local function TryApplyUpgradedDreadswordComponents(inst)
 	if inst == nil or not inst:IsValid() or inst.prefab ~= DREADSWORD_PREFAB then
 		return false
 	end
-	if IsRevivalDreadsword(inst) and not inst._nm_revival_parry_applied then
-		AddRevivalParryComponents(inst)
-		return true
-	end
-	if IsKinglyDreadsword(inst) and not inst._nm_kingly_applied then
-		local variant_id = GetKinglyVariantId(inst) or inst._nm_kingly_variant
-		if variant_id ~= nil then
-			ApplyKinglyUpgrade(inst, variant_id)
+	if IsRevivalDreadsword(inst) or GetDreadswordUpgradeKey(inst) == "dreadsword_revival" then
+		if not inst._nm_revival_parry_applied then
+			AddRevivalParryComponents(inst)
 			return true
 		end
+		return true
+	end
+	local variant_id = GetKinglyVariantId(inst) or inst._nm_kingly_variant
+	if variant_id == nil then
+		local key = GetDreadswordUpgradeKey(inst)
+		if IsDreadswordUpgradeKey(key) then
+			variant_id = string.sub(key, 12)
+		end
+	end
+	if variant_id ~= nil and not inst._nm_kingly_applied then
+		ApplyKinglyUpgrade(inst, variant_id)
+		return true
 	end
 	return inst._nm_revival_parry_applied or inst._nm_kingly_applied
 end
@@ -1049,7 +1170,8 @@ local function ScheduleUpgradedComponentCheck(inst)
 		end
 		if TryApplyUpgradedDreadswordComponents(inst)
 			or tries >= 40
-			or not (IsRevivalDreadsword(inst) or IsKinglyDreadsword(inst)) then
+			or not (IsRevivalDreadsword(inst) or IsKinglyDreadsword(inst)
+				or IsDreadswordUpgradeKey(GetDreadswordUpgradeKey(inst))) then
 			if inst._nm_upgrade_check_task ~= nil then
 				inst._nm_upgrade_check_task:Cancel()
 				inst._nm_upgrade_check_task = nil
@@ -1176,6 +1298,27 @@ end
 
 AddClientModRPCHandler("my_mod", "dreadsword_kingly_parry_sync", ClientRefreshKinglyParryReticule)
 
+AddClientModRPCHandler("my_mod", "dreadsword_upgrade_sync", function(sword_guid, variant_id)
+	ApplyDreadswordUpgradeOnClient(sword_guid, variant_id)
+end)
+
+local function TryAddDreadswordHorrorfuelRepairAction(inst, target, actions)
+	if inst.prefab ~= HORRORFUEL_REPAIR_ITEM or target == nil or target.prefab ~= DREADSWORD_PREFAB then
+		return false
+	end
+	if not IsUpgradedDreadswordForAction(target) or not DreadswordNeedsRepair(target) then
+		return false
+	end
+	if not target:HasTag("trader") and not target:HasTag("alltrader") then
+		SetupKinglyTrader(target)
+	end
+	if not target:HasTag("trader") and not target:HasTag("alltrader") then
+		return false
+	end
+	table.insert(actions, ACTIONS.GIVE)
+	return true
+end
+
 AddComponentAction("USEITEM", "inventoryitem", function(inst, doer, target, actions, right)
 	if target == nil or target.prefab ~= DREADSWORD_PREFAB then
 		return
@@ -1184,26 +1327,17 @@ AddComponentAction("USEITEM", "inventoryitem", function(inst, doer, target, acti
 		return
 	end
 
-	if inst.prefab == REVIVAL_UPGRADE_ITEM and not IsUpgradedDreadsword(target) then
+	if inst.prefab == REVIVAL_UPGRADE_ITEM and not IsUpgradedDreadswordForAction(target) then
 		table.insert(actions, ACTIONS.GIVE)
 		return
 	end
 
-	if inst.prefab == UPGRADE_GEM and not IsUpgradedDreadsword(target) and CanWilsonUpgradeDreadsword(doer) then
+	if inst.prefab == UPGRADE_GEM and not IsUpgradedDreadswordForAction(target) and CanWilsonUpgradeDreadsword(doer) then
 		table.insert(actions, ACTIONS.GIVE)
 		return
 	end
 
-	if inst.prefab == "dreadstone" and IsUpgradedDreadsword(target) then
-		if target.replica ~= nil and target.replica.finiteuses ~= nil then
-			if target.replica.finiteuses:GetPercent() < 1 then
-				table.insert(actions, ACTIONS.GIVE)
-			end
-		elseif TheWorld.ismastersim and target.components.finiteuses ~= nil
-			and target.components.finiteuses:GetPercent() < 1 then
-			table.insert(actions, ACTIONS.GIVE)
-		end
-	end
+	TryAddDreadswordHorrorfuelRepairAction(inst, target, actions)
 end, modname)
 
 AddPrefabPostInit(DREADSWORD_PREFAB, function(inst)
@@ -1222,25 +1356,27 @@ AddPrefabPostInit(DREADSWORD_PREFAB, function(inst)
 
 	if not TheWorld.ismastersim then
 		inst:DoTaskInTime(0, function()
-			if inst:IsValid() and not IsUpgradedDreadsword(inst) then
+			if inst:IsValid() and not IsUpgradedDreadswordForAction(inst) then
 				SetupKinglyTrader(inst)
 			end
 			PatchLocalPlayerParryControls(ThePlayer)
 			ClientRefreshRevivalParryReticule()
 		end)
-		return
+	else
+		inst:DoTaskInTime(0, function()
+			if inst:IsValid() and not IsUpgradedDreadsword(inst) then
+				SetupKinglyTrader(inst)
+			end
+		end)
 	end
-
-	inst:DoTaskInTime(0, function()
-		if inst:IsValid() and not IsUpgradedDreadsword(inst) then
-			SetupKinglyTrader(inst)
-		end
-	end)
 
 	local old_onsave = inst.OnSave
 	inst.OnSave = function(save_inst, data)
 		if old_onsave ~= nil then
 			old_onsave(save_inst, data)
+		end
+		if not TheWorld.ismastersim then
+			return
 		end
 		if IsRevivalDreadsword(save_inst) then
 			data.nm_dreadsword_revival = true

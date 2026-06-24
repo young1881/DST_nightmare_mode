@@ -34,7 +34,7 @@ local shockwave_assets =
 local PocketWatchCommon = require("prefabs/pocketwatch_common")
 
 local TIMESTOP_DURATION = 12
-local TIMESTOP_IMMUNITY_DURATION = 15
+local TIMESTOP_IMMUNITY_DURATION = 18
 local TIMESTOP_FX_RADIUS = 10
 local SHADOW_TRAP_VISUAL_RADIUS = 6
 local TIMESTOP_FX_RING_SCALE = TIMESTOP_FX_RADIUS / SHADOW_TRAP_VISUAL_RADIUS
@@ -225,7 +225,7 @@ local function DoCastSpell(inst, doer)
             "pocketwatch_heal_fx_mount" or "pocketwatch_heal_fx")
         fx.entity:SetParent(doer.entity)
 
-        inst.components.rechargeable:Discharge(TUNING.POCKETWATCH_HEAL_COOLDOWN * 2)
+        inst.components.rechargeable:Discharge(TUNING.POCKETWATCH_CHERRIFT_COOLDOWN or 300)
     end
 
     local radius = TIMESTOP_FX_RADIUS

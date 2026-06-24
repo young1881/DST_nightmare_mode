@@ -20,6 +20,7 @@ TUNING.WANDA_READ_PENALTY = 5
 
 -- TUNING.POCKETWATCH_HEAL_COOLDOWN = 60    --不老表CD减半
 TUNING.POCKETWATCH_RECALL_COOLDOWN = 240 -- 溯源表 CD：4 分钟（半游戏日）
+TUNING.POCKETWATCH_CHERRIFT_COOLDOWN = 300 -- 时停表 CD：5 分钟
 
 -- 开局送 5 个时间碎片
 for _ = 1, 5 do
@@ -245,6 +246,8 @@ params.clock_container = {
 	type = "watchbox",
 	itemtestfn = function(inst, item, slot)
 		return item:HasTag("pocketwatch")
+			or item.prefab == "pocketwatch_dismantler"
+			or item.prefab == "pocketwatch_parts"
 	end
 }
 
@@ -285,7 +288,7 @@ end)
 local function pocketwatch_nodecon(inst) return not inst:HasTag("pocketwatch_inactive") end
 AddRecipe2("pocketwatch_cherrift",
 	{
-		Ingredient("pocketwatch_parts", 3),
+		Ingredient("pocketwatch_parts", 2),
 		Ingredient("coin_1", 1),
 		Ingredient("dreadstone", 1),
 		Ingredient("purebrilliance", 1),

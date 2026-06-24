@@ -661,8 +661,10 @@ local function PlayerStopPossessing(Possessed,Possessor)
 	-- Clear possession routing before restoring control so humans use vanilla attack logic.
 	Possessor.Poss2.Possessing = nil
 	SyncPossessingTargetNet(Possessor, nil)
-	Possessor:SetPossessing(false)
-	Possessor:SetPossessingPlayer(false)
+	if Possessor.SetPossessing ~= nil then
+		Possessor:SetPossessing(false)
+		Possessor:SetPossessingPlayer(false)
+	end
 
 	if Possessor.components.playercontroller then
 		if Possessor.components.locomotor ~= nil then
@@ -730,7 +732,9 @@ local function PlayerStopPossessing(Possessed,Possessor)
 	Possessor.Poss2.Timer:Cancel()
 
 	OnPossessionChanged(Possessed,Possessor)
-	if Possessed:HasTag("player") then Possessed:SetPossessed(false) end
+	if Possessed:HasTag("player") and Possessed.SetPossessed ~= nil then
+		Possessed:SetPossessed(false)
+	end
 end
 
 -- Generic function run on all possessions
@@ -793,13 +797,16 @@ local function PlayerStartPossessing(Possessed,Possessor)
 
 	Possessor.Poss2.Timer = Possessor:DoTaskInTime(Dur,function() Possessed.Poss2.EndFN(Possessed,Possessor) end)
 	Possessor.Poss2.StartTime = math.floor(G.GetTime())
-	Possessor:SetPossessing(true)
-
-	-- Only activate speech control when you're actually controlling a player.
-	Possessor:SetPossessingPlayer(Possessed:HasTag("player") and Possessed.userid ~= "")
+	if Possessor.SetPossessing ~= nil then
+		Possessor:SetPossessing(true)
+		-- Only activate speech control when you're actually controlling a player.
+		Possessor:SetPossessingPlayer(Possessed:HasTag("player") and Possessed.userid ~= "")
+	end
 
 	OnPossessionChanged(Possessed,Possessor)
-	if Possessed:HasTag("player") then Possessed:SetPossessed(true) end
+	if Possessed:HasTag("player") and Possessed.SetPossessed ~= nil then
+		Possessed:SetPossessed(true)
+	end
 end
 
 -- Not to be confused with PlayerTickFN.
@@ -914,6 +921,8 @@ end
 
 -- In the event of a possessed thing being deleted mid-possession, we need to shut everything off so nothing crashes.
 local function EmergencyShutoff(Person)
+	-- Possession cleanup is server-authoritative; clients sync via net vars.
+	if not G.TheWorld.ismastersim or Person.Poss2 == nil then return end
 	EmergencyRetroShutoff(Person)
 	for ID,Possessor in pairs(Person.Poss2.Possessors) do
 		Person.Poss2.EndFN(Person,Possessor)

@@ -189,9 +189,11 @@ local function NightmareShadowBishopResumePreAttackTauntIfNeeded(inst)
 		return false
 	end
 	if NightmareShadowBishopIsInAttackCycle(inst)
-		or NightmareShadowBishopIsPreAttackTauntState(inst)
-		or inst.sg:HasStateTag("hit") then
+		or NightmareShadowBishopIsPreAttackTauntState(inst) then
 		return true
+	end
+	if inst.sg:HasStateTag("hit") then
+		return false
 	end
 	inst.sg:GoToState("nm_pre_attack_taunt")
 	return true
@@ -229,6 +231,16 @@ local function NightmareShadowBishopRequestAttack(inst, target)
 	return NightmareShadowBishopBeginPreAttackTaunt(inst, target)
 end
 
+local function NightmareShadowBishopApplyPreAttackTarget(inst, target)
+	target = NightmareShadowBishopResolveTarget(inst, target)
+	if target == nil or not NightmareShadowBishopTargetIsAttackable(inst, target) then
+		return nil
+	end
+	inst._nm_sb_attack_target = target
+	inst:ForceFacePoint(target.Transform:GetWorldPosition())
+	return target
+end
+
 local function NightmareShadowBishopPatchDoattack(sg)
 	local doattack = sg.events.doattack
 	if doattack == nil or doattack._nm_shadow_bishop_doattack_patched then
@@ -239,16 +251,45 @@ local function NightmareShadowBishopPatchDoattack(sg)
 		if inst.components.health:IsDead() then
 			return
 		end
+		local target = data ~= nil and data.target or nil
+
 		if NightmareShadowBishopIsInAttackCycle(inst) then
 			return
 		end
 		if NightmareShadowBishopIsPreAttackTauntState(inst) then
+			NightmareShadowBishopApplyPreAttackTarget(inst, target)
 			return
 		end
+
+		if NightmareShadowBishopIsPlayerControlled(inst) then
+			if inst._nm_sb_taunt_required then
+				NightmareShadowBishopClearAttackIntent(inst)
+			end
+			if inst.sg:HasStateTag("taunt") or inst.sg:HasStateTag("levelup") then
+				return
+			end
+			local can_start = not inst.sg:HasStateTag("busy")
+				or (inst.sg:HasStateTag("hit") and not inst.sg:HasStateTag("electrocute"))
+			if not can_start then
+				return
+			end
+			NightmareShadowBishopRequestAttack(inst, target)
+			return
+		end
+
 		if inst.sg:HasStateTag("taunt") then
 			return
 		end
 		if inst._nm_sb_taunt_required then
+			local resolved = NightmareShadowBishopApplyPreAttackTarget(inst, target)
+			if NightmareShadowBishopResumePreAttackTauntIfNeeded(inst) then
+				return
+			end
+			if inst.sg:HasStateTag("hit") and resolved ~= nil then
+				inst.sg.statemem.doattacktarget = resolved
+			elseif resolved ~= nil then
+				NightmareShadowBishopBeginPreAttackTaunt(inst, resolved)
+			end
 			return
 		end
 		if inst.sg:HasStateTag("levelup") then
@@ -259,7 +300,6 @@ local function NightmareShadowBishopPatchDoattack(sg)
 		if not can_start then
 			return
 		end
-		local target = data ~= nil and data.target or nil
 		NightmareShadowBishopRequestAttack(inst, target)
 	end
 end
@@ -272,7 +312,8 @@ local function NightmareShadowBishopPatchAttacked(sg)
 	attacked._nm_shadow_bishop_attacked_patched = true
 	local old_attacked = attacked.fn
 	attacked.fn = function(inst, data)
-		if NightmareShadowBishopIsPreAttackTauntState(inst) then
+		if NightmareShadowBishopIsPreAttackTauntState(inst)
+			or (inst._nm_sb_taunt_required and inst.sg:HasStateTag("taunt")) then
 			return
 		end
 		old_attacked(inst, data)
@@ -330,8 +371,30 @@ local function NightmareShadowBishopPatchHitState(sg)
 							return
 						end
 					end
-					inst.sg:GoToState("idle")
+					if inst._nm_sb_taunt_required then
+						if NightmareShadowBishopIsPlayerControlled(inst) then
+							NightmareShadowBishopClearAttackIntent(inst)
+							inst.sg:GoToState("idle")
+						else
+							NightmareShadowBishopScheduleResumePreAttackTaunt(inst)
+						end
+					else
+						inst.sg:GoToState("idle")
+					end
 				end
+			end
+		end
+	end
+	local old_onexit = hit.onexit
+	hit.onexit = function(inst)
+		if old_onexit ~= nil then
+			old_onexit(inst)
+		end
+		if inst._nm_sb_taunt_required then
+			if NightmareShadowBishopIsPlayerControlled(inst) then
+				NightmareShadowBishopClearAttackIntent(inst)
+			else
+				NightmareShadowBishopScheduleResumePreAttackTaunt(inst)
 			end
 		end
 	end
@@ -393,6 +456,10 @@ AddStategraphPostInit("shadow_bishop", function(sg)
 			},
 
 			events = {
+				EventHandler("doattack", function(inst, data)
+					NightmareShadowBishopApplyPreAttackTarget(
+						inst, data ~= nil and data.target or nil)
+				end),
 				EventHandler("animover", function(inst)
 					if not inst.AnimState:AnimDone() then
 						return
@@ -415,6 +482,14 @@ AddStategraphPostInit("shadow_bishop", function(sg)
 			onexit = function(inst)
 				if inst.sg.statemem.nm_sb_taunt_to_attack then
 					inst.sg.statemem.nm_sb_taunt_to_attack = nil
+					return
+				end
+				if inst._nm_sb_taunt_required then
+					if NightmareShadowBishopIsPlayerControlled(inst) then
+						NightmareShadowBishopClearAttackIntent(inst)
+					else
+						NightmareShadowBishopScheduleResumePreAttackTaunt(inst)
+					end
 				end
 			end,
 		}),
@@ -746,7 +821,10 @@ AddPrefabPostInit("shadow_bishop", function(inst)
 			if i._nm_shadow_bishop_was_controlled and not controlled then
 				NightmareShadowBishopScheduleResumePreAttackTaunt(i)
 			elseif not i._nm_shadow_bishop_was_controlled and controlled then
-				NightmareShadowBishopScheduleResumePreAttackTaunt(i)
+				if not NightmareShadowBishopIsInAttackCycle(i)
+					and not NightmareShadowBishopIsPreAttackTauntState(i) then
+					NightmareShadowBishopClearAttackIntent(i)
+				end
 			end
 			i._nm_shadow_bishop_was_controlled = controlled
 		end)

@@ -1,6 +1,6 @@
 GLOBAL.setmetatable(env, { __index = function(t, k) return GLOBAL.rawget(GLOBAL, k) end })
 
-GLOBAL.MOD_VERSION = "7.1.3"
+GLOBAL.MOD_VERSION = "7.1.5.2"
 
 local require = GLOBAL.require
 

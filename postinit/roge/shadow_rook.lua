@@ -1,9 +1,12 @@
 -- 暗影战车：战吼一次 → 连续闪现啃咬（次数 = 等级 + 2），中途可换目标，最后一咬锁定
 
 local ShadowChess = require("stategraphs/SGshadow_chesspieces")
+require("stategraphs/commonstates")
 
 local CHARGE_COUNT_OFFSET = 2
 local PRE_ATTACK_TAUNT_STATE = "roge_pre_attack_taunt"
+local ROGE_SHADOW_ROOK_HIT_IMMUNE_SEC = 5
+local ROGE_SHADOW_ROOK_COMBO_FIND_DIST = 40
 
 local AREAATTACK_EXCLUDETAGS = {
 	"INLIMBO", "notarget", "invisible", "noattack", "flight",
@@ -60,16 +63,36 @@ local function NightmareShadowRookClearComboMem(inst)
 	mem.roge_bites_total = nil
 	mem.roge_bites_done = nil
 	mem.roge_final_target = nil
+	mem.roge_combo_primary_target = nil
 end
 
-local function NightmareShadowRookBeginCombo(inst)
-	local mem = NightmareShadowRookGetComboMem(inst)
-	if mem == nil then
-		return
+local function NightmareShadowRookIsHitImmune(inst)
+	return inst._roge_hitimmune_until ~= nil and GetTime() < inst._roge_hitimmune_until
+end
+
+local function NightmareShadowRookStartHitImmunity(inst)
+	inst._roge_hitimmune_until = GetTime() + ROGE_SHADOW_ROOK_HIT_IMMUNE_SEC
+end
+
+local function NightmareShadowRookFindFallbackTarget(inst)
+	if inst.components.combat == nil then
+		return nil
 	end
-	mem.roge_bites_total = NightmareShadowRookGetBiteCount(inst)
-	mem.roge_bites_done = 0
-	mem.roge_final_target = nil
+	local x, y, z = inst.Transform:GetWorldPosition()
+	local ents = TheSim:FindEntities(
+		x, 0, z, ROGE_SHADOW_ROOK_COMBO_FIND_DIST, { "_combat" }, AREAATTACK_EXCLUDETAGS)
+	local best, best_dsq
+	for _, v in ipairs(ents) do
+		if v ~= inst and NightmareShadowRookTargetIsAttackable(inst, v)
+			and inst.components.combat:CanTarget(v) then
+			local dsq = inst:GetDistanceSqToInst(v)
+			if best_dsq == nil or dsq < best_dsq then
+				best = v
+				best_dsq = dsq
+			end
+		end
+	end
+	return best
 end
 
 local function NightmareShadowRookIsLastBite(inst)
@@ -108,7 +131,40 @@ local function NightmareShadowRookResolveTarget(inst, explicit_target)
 		end
 	end
 
+	if mem ~= nil and mem.roge_combo_primary_target ~= nil
+		and mem.roge_combo_primary_target:IsValid()
+		and NightmareShadowRookTargetIsAttackable(inst, mem.roge_combo_primary_target) then
+		return mem.roge_combo_primary_target
+	end
+
+	if NightmareShadowRookIsInAttackCycle(inst) then
+		return NightmareShadowRookFindFallbackTarget(inst)
+	end
+
 	return nil
+end
+
+local function NightmareShadowRookBeginCombo(inst, initial_target)
+	local mem = NightmareShadowRookGetComboMem(inst)
+	if mem == nil then
+		return
+	end
+	mem.roge_bites_total = NightmareShadowRookGetBiteCount(inst)
+	mem.roge_bites_done = 0
+	mem.roge_final_target = nil
+	mem.roge_combo_primary_target = NightmareShadowRookResolveTarget(inst, initial_target)
+end
+
+local function NightmareShadowRookSafeSetCombatTarget(inst, target)
+	if inst.components.combat == nil or inst._roge_shadow_rook_settarget_lock then
+		return
+	end
+	if inst.components.combat.target == target then
+		return
+	end
+	inst._roge_shadow_rook_settarget_lock = true
+	inst.components.combat:SetTarget(target)
+	inst._roge_shadow_rook_settarget_lock = nil
 end
 
 local function NightmareShadowRookApplyTarget(inst, target)
@@ -118,9 +174,7 @@ local function NightmareShadowRookApplyTarget(inst, target)
 	if inst.sg ~= nil and inst.sg.statemem ~= nil then
 		inst.sg.statemem.target = target
 	end
-	if inst.components.combat ~= nil and inst.components.combat.target ~= target then
-		inst.components.combat:SetTarget(target)
-	end
+	NightmareShadowRookSafeSetCombatTarget(inst, target)
 	return target
 end
 
@@ -153,6 +207,10 @@ local function NightmareShadowRookTryRetargetDuringCombo(inst, data)
 
 	if target ~= nil then
 		NightmareShadowRookApplyTarget(inst, target)
+		local mem = NightmareShadowRookGetComboMem(inst)
+		if mem ~= nil and not NightmareShadowRookIsLastBite(inst) then
+			mem.roge_combo_primary_target = target
+		end
 		inst:ForceFacePoint(target.Transform:GetWorldPosition())
 	end
 
@@ -167,6 +225,39 @@ local function NightmareShadowRookGoToPreAttackTaunt(inst, target)
 		return
 	end
 	inst.sg:GoToState(PRE_ATTACK_TAUNT_STATE, target)
+end
+
+local function NightmareShadowRookHasPendingCombo(inst)
+	local mem = NightmareShadowRookGetComboMem(inst)
+	return mem ~= nil and mem.roge_bites_total ~= nil
+end
+
+local function NightmareShadowRookResumePreAttackTauntIfNeeded(inst)
+	if not NightmareShadowRookHasPendingCombo(inst) then
+		return false
+	end
+	if inst.sg == nil or inst.components.health == nil or inst.components.health:IsDead() then
+		return false
+	end
+	if NightmareShadowRookIsInAttackCycle(inst) then
+		return true
+	end
+	if inst.sg:HasStateTag("hit") then
+		return false
+	end
+	NightmareShadowRookGoToPreAttackTaunt(inst, nil)
+	return true
+end
+
+local function NightmareShadowRookScheduleResumePreAttackTaunt(inst)
+	if not NightmareShadowRookHasPendingCombo(inst) then
+		return
+	end
+	inst:DoTaskInTime(0, function(i)
+		if i:IsValid() then
+			NightmareShadowRookResumePreAttackTauntIfNeeded(i)
+		end
+	end)
 end
 
 local function NightmareShadowRookOnBiteFinished(inst)
@@ -259,8 +350,11 @@ local function NightmareShadowRookOnAttackFacingUpdate(inst)
 	if NightmareShadowRookIsLastBite(inst) then
 		return
 	end
-	local target = NightmareShadowRookSyncComboTarget(inst, nil)
+	local target = NightmareShadowRookResolveTarget(inst, nil)
 	if target ~= nil and target:IsValid() then
+		if inst.sg ~= nil and inst.sg.statemem ~= nil then
+			inst.sg.statemem.target = target
+		end
 		inst:ForceFacePoint(target.Transform:GetWorldPosition())
 	end
 end
@@ -295,6 +389,7 @@ local function NightmareShadowRookReplaceAttackStates(sg)
 				end
 				local target = NightmareShadowRookSyncComboTarget(inst, nil)
 				if target ~= nil then
+					inst.sg.statemem.roge_taunt_to_attack = true
 					inst.sg:GoToState("attack", target)
 				else
 					NightmareShadowRookClearComboMem(inst)
@@ -302,11 +397,21 @@ local function NightmareShadowRookReplaceAttackStates(sg)
 				end
 			end),
 		},
+
+		onexit = function(inst)
+			if inst.sg.statemem.roge_taunt_to_attack then
+				inst.sg.statemem.roge_taunt_to_attack = nil
+				return
+			end
+			if NightmareShadowRookHasPendingCombo(inst) then
+				NightmareShadowRookScheduleResumePreAttackTaunt(inst)
+			end
+		end,
 	})
 
 	sg.states.attack = State({
 		name = "attack",
-		tags = { "attack", "busy" },
+		tags = { "attack", "busy", "nointerrupt" },
 
 		onenter = NightmareShadowRookEnterAttack,
 		onupdate = NightmareShadowRookOnAttackFacingUpdate,
@@ -355,7 +460,7 @@ local function NightmareShadowRookReplaceAttackStates(sg)
 
 	sg.states.attack_teleport = State({
 		name = "attack_teleport",
-		tags = { "attack", "busy", "noattack" },
+		tags = { "attack", "busy", "noattack", "nointerrupt" },
 
 		onenter = NightmareShadowRookEnterAttackTeleport,
 
@@ -393,6 +498,86 @@ local function NightmareShadowRookReplaceAttackStates(sg)
 	})
 end
 
+local function NightmareShadowRookPatchAttacked(sg)
+	local attacked = sg.events.attacked
+	if attacked == nil or attacked._roge_shadow_rook_attacked_patched then
+		return
+	end
+	attacked._roge_shadow_rook_attacked_patched = true
+	attacked.fn = function(inst, data)
+		if inst.components.health == nil or inst.components.health:IsDead() then
+			return
+		end
+		if inst.WantsToLevelUp ~= nil and inst:WantsToLevelUp() then
+			return
+		end
+		if inst.sg == nil then
+			return
+		end
+		if NightmareShadowRookIsInAttackCycle(inst) then
+			return
+		end
+		if inst.sg.currentstate ~= nil
+			and inst.sg.currentstate.name == PRE_ATTACK_TAUNT_STATE then
+			return
+		end
+		if NightmareShadowRookIsHitImmune(inst) then
+			return
+		end
+		if inst.sg:HasStateTag("busy") then
+			return
+		end
+		if CommonHandlers ~= nil and CommonHandlers.HitRecoveryDelay ~= nil
+			and CommonHandlers.HitRecoveryDelay(inst) then
+			return
+		end
+		inst.sg:GoToState("hit")
+	end
+end
+
+local function NightmareShadowRookPatchHitState(sg)
+	local hit = sg.states ~= nil and sg.states.hit or nil
+	if hit == nil or hit._roge_shadow_rook_hit_patched then
+		return
+	end
+	hit._roge_shadow_rook_hit_patched = true
+	local old_onenter = hit.onenter
+	hit.onenter = function(inst, ...)
+		NightmareShadowRookStartHitImmunity(inst)
+		if old_onenter ~= nil then
+			return old_onenter(inst, ...)
+		end
+	end
+	local old_onexit = hit.onexit
+	hit.onexit = function(inst)
+		if old_onexit ~= nil then
+			old_onexit(inst)
+		end
+		if NightmareShadowRookHasPendingCombo(inst) and not NightmareShadowRookIsInAttackCycle(inst) then
+			NightmareShadowRookScheduleResumePreAttackTaunt(inst)
+		end
+	end
+	if hit.events ~= nil then
+		for _, ev in ipairs(hit.events) do
+			if ev ~= nil and ev.name == "animover" then
+				local old_fn = ev.fn
+				ev.fn = function(inst)
+					if NightmareShadowRookHasPendingCombo(inst)
+						and inst.sg.statemem.doattacktarget == nil
+						and not NightmareShadowRookIsInAttackCycle(inst) then
+						NightmareShadowRookScheduleResumePreAttackTaunt(inst)
+						return
+					end
+					if old_fn ~= nil then
+						return old_fn(inst)
+					end
+				end
+				break
+			end
+		end
+	end
+end
+
 local function NightmareShadowRookPatchDoattack(sg)
 	local doattack = sg.events.doattack
 	if doattack == nil or doattack._roge_shadow_rook_doattack_patched then
@@ -400,10 +585,17 @@ local function NightmareShadowRookPatchDoattack(sg)
 	end
 	doattack._roge_shadow_rook_doattack_patched = true
 	doattack.fn = function(inst, data)
-		if inst.components.health:IsDead() then
+		if inst.components.health == nil or inst.components.health:IsDead() then
+			return
+		end
+		if inst.sg == nil then
 			return
 		end
 		if NightmareShadowRookTryRetargetDuringCombo(inst, data) then
+			return
+		end
+		if NightmareShadowRookHasPendingCombo(inst) and not NightmareShadowRookIsInAttackCycle(inst) then
+			NightmareShadowRookResumePreAttackTauntIfNeeded(inst)
 			return
 		end
 		if inst.sg:HasStateTag("levelup") then
@@ -417,7 +609,7 @@ local function NightmareShadowRookPatchDoattack(sg)
 		if target == nil then
 			return
 		end
-		NightmareShadowRookBeginCombo(inst)
+		NightmareShadowRookBeginCombo(inst, target)
 		NightmareShadowRookGoToPreAttackTaunt(inst, target)
 	end
 end
@@ -444,16 +636,18 @@ local function NightmareShadowRookHookCombatRetarget(inst)
 	local combat = inst.components.combat
 	local old_settarget = combat.SetTarget
 	combat.SetTarget = function(self, target, ...)
+		if self.inst ~= nil and self.inst._roge_shadow_rook_settarget_lock then
+			return old_settarget(self, target, ...)
+		end
 		old_settarget(self, target, ...)
 		local owner = self.inst
 		if owner ~= nil and owner:IsValid()
 			and NightmareShadowRookIsInAttackCycle(owner)
 			and not NightmareShadowRookIsLastBite(owner)
 			and target ~= nil and target:IsValid()
-			and NightmareShadowRookTargetIsAttackable(owner, target) then
-			if owner.sg ~= nil and owner.sg.statemem ~= nil then
-				owner.sg.statemem.target = target
-			end
+			and NightmareShadowRookTargetIsAttackable(owner, target)
+			and owner.sg ~= nil and owner.sg.statemem ~= nil then
+			owner.sg.statemem.target = target
 		end
 	end
 end
@@ -461,6 +655,8 @@ end
 AddStategraphPostInit("shadow_rook", function(sg)
 	NightmareShadowRookReplaceAttackStates(sg)
 	NightmareShadowRookPatchVanillaTaunt(sg)
+	NightmareShadowRookPatchAttacked(sg)
+	NightmareShadowRookPatchHitState(sg)
 	NightmareShadowRookPatchDoattack(sg)
 end)
 

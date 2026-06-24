@@ -1,5 +1,5 @@
 local MY_RECHARGEABLE_PREFABS = {
-    pocketwatch_cherrift = TUNING.POCKETWATCH_HEAL_COOLDOWN * 2,
+    pocketwatch_cherrift = TUNING.POCKETWATCH_CHERRIFT_COOLDOWN or 300,
     pocketwatch_injure = TUNING.POCKETWATCH_HEAL_COOLDOWN / 2
 }
 

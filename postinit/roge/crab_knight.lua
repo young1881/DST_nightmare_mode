@@ -8,15 +8,28 @@ local ROGE_CRABKNIGHT_WEAK_HEALTH = 800
 local ROGE_CRABKNIGHT_SCALE = 1.85
 local ROGE_CRABKNIGHT_VANILLA_SCALE = 1.7
 
--- 旋转攻击：更远触发、更大范围、更短 CD、命中玩家击退
-local ROGE_CRABKNIGHT_SPIN_TRIGGER_RANGE = 5.5
-local ROGE_CRABKNIGHT_SPIN_AOE_DIST = -0.6
-local ROGE_CRABKNIGHT_SPIN_AOE_RADIUS = 4.5
+-- 旋转攻击：略大于原版范围；近战距离仅随模型缩放，不再额外乘 1.35
+local ROGE_CRABKNIGHT_SPIN_AOE_DIST = -0.4
+local ROGE_CRABKNIGHT_SPIN_AOE_RADIUS = 2.5
 local ROGE_CRABKNIGHT_SPIN_AOE_PADDING = 3
 local ROGE_CRABKNIGHT_ATTACK_PERIOD_MULT = 0.5
-local ROGE_CRABKNIGHT_ATTACK_RANGE_MULT = 1.35
 local ROGE_CRABKNIGHT_SPIN_KNOCKBACK_RADIUS = 2.8
 local ROGE_CRABKNIGHT_SPIN_KNOCKBACK_STRENGTH = 1.6
+local ROGE_CRABKNIGHT_SPIN_LOOP_DURATION = 1.2
+
+local function RogeGetCrabKnightScaleRatio()
+	return ROGE_CRABKNIGHT_SCALE / ROGE_CRABKNIGHT_VANILLA_SCALE
+end
+
+-- 爪击命中/AI 开攻距离：原版骑士 4.5，仅随模型放大。
+local function RogeGetCrabKnightMeleeRange()
+	return TUNING.CRABKING_MOB_KNIGHT_ATTACK_RANGE * RogeGetCrabKnightScaleRatio()
+end
+
+-- 旋转触发：原版 largecreature 用 MELEE_RANGE(3)，缩放后约 3.2。
+local function RogeGetCrabKnightSpinTriggerRange()
+	return TUNING.CRABKING_MOB_MELEE_RANGE * RogeGetCrabKnightScaleRatio()
+end
 
 local ROGE_SPIN_AOE_MUST_TAGS = { "_combat" }
 local ROGE_SPIN_AOE_CANT_TAGS = {
@@ -27,14 +40,16 @@ local ROGE_CRABKNIGHT_CANNON_BASE_SYMBOL = "leak_part"
 local ROGE_CRABKNIGHT_CROWN_ABOVE_BOD = 2.05
 local ROGE_CRABKNIGHT_CANNON_SCALE = 0.8
 local ROGE_PARASITE_CANNON_SHOT_COUNT = 3
-local ROGE_PARASITE_CANNON_TILE_RANGE = 5
-local ROGE_PARASITE_CANNON_FIND_DIST = ROGE_PARASITE_CANNON_TILE_RANGE * TILE_SCALE
+-- 与鱿鱼王喷墨同量级：远距索敌 + 弹道可飞满程
+local ROGE_PARASITE_CANNON_CAST_RANGE = 30
+local ROGE_PARASITE_CANNON_SPEED_NEAR = 15
+local ROGE_PARASITE_CANNON_SPEED_FAR = 6
 local ROGE_PARASITE_CANNON_SPLASH_RADIUS = TILE_SCALE
-local ROGE_PARASITE_CANNON_DAMAGE = 80
-local ROGE_PARASITE_CANNON_HSPEED_MULT = 1
 local ROGE_PARASITE_CANNON_GRAVITY = -40
-local ROGE_PARASITE_CANNON_SHADOW_W = 4.4
-local ROGE_PARASITE_CANNON_SHADOW_H = 3.3
+
+local ROGE_PARASITE_CANNON_TARGET_CANT = {
+	"FX", "NOCLICK", "DECOR", "INLIMBO", "noattack", "crabking_ally", "playerghost",
+}
 local _roge_spawning_parasite_cannon = false
 local function RogeIsCrabKnight(inst)
 	return inst ~= nil and inst:IsValid() and inst:HasTag("crab_mob_knight")
@@ -71,9 +86,8 @@ local function RogeApplyCrabKnightCommonCombat(inst)
 	if inst.components.combat ~= nil then
 		local base_period = TUNING.CRABKING_MOB_ATTACK_PERIOD + math.random() * 2
 		inst.components.combat:SetAttackPeriod(base_period * ROGE_CRABKNIGHT_ATTACK_PERIOD_MULT)
-		inst.components.combat:SetRange(
-			TUNING.CRABKING_MOB_KNIGHT_ATTACK_RANGE * ROGE_CRABKNIGHT_ATTACK_RANGE_MULT,
-			TUNING.CRABKING_MOB_HIT_RANGE)
+		local melee_range = RogeGetCrabKnightMeleeRange()
+		inst.components.combat:SetRange(melee_range, melee_range)
 	end
 end
 
@@ -123,13 +137,17 @@ local function RogeCrabKnightSpinAOE(inst)
 		return
 	end
 	inst.components.combat.ignorehitrange = true
+	local scale_ratio = RogeGetCrabKnightScaleRatio()
 	local x, y, z = inst.Transform:GetWorldPosition()
 	local cos_theta = math.cos(inst.Transform:GetRotation() * DEGREES)
 	local sin_theta = math.sin(inst.Transform:GetRotation() * DEGREES)
-	local dist = ROGE_CRABKNIGHT_SPIN_AOE_DIST
+	local dist = ROGE_CRABKNIGHT_SPIN_AOE_DIST * scale_ratio
 	x = x + dist * cos_theta
 	z = z - dist * sin_theta
-	local radius = ROGE_CRABKNIGHT_SPIN_AOE_RADIUS
+	local radius = ROGE_CRABKNIGHT_SPIN_AOE_RADIUS * scale_ratio
+	local max_reach = RogeGetCrabKnightMeleeRange() + 0.25
+	local max_reach_sq = max_reach * max_reach
+	local kx, _, kz = inst.Transform:GetWorldPosition()
 	local targets = inst.sg.statemem.targets or {}
 	for _, v in ipairs(TheSim:FindEntities(
 		x, y, z, radius + ROGE_CRABKNIGHT_SPIN_AOE_PADDING, ROGE_SPIN_AOE_MUST_TAGS, ROGE_SPIN_AOE_CANT_TAGS)) do
@@ -139,7 +157,9 @@ local function RogeCrabKnightSpinAOE(inst)
 			local range = radius + v:GetPhysicsRadius(0)
 			local x1, _, z1 = v.Transform:GetWorldPosition()
 			local dx, dz = x1 - x, z1 - z
-			if dx * dx + dz * dz < range * range then
+			local dxk, dzk = x1 - kx, z1 - kz
+			if dx * dx + dz * dz < range * range
+				and dxk * dxk + dzk * dzk <= max_reach_sq then
 				inst.components.combat:DoAttack(v)
 				targets[v] = true
 				if v:HasTag("player") then
@@ -156,13 +176,50 @@ local function RogeCrabKnightSpinAOE(inst)
 	inst.sg.statemem.targets = targets
 	inst.components.combat.ignorehitrange = false
 end
-local function RogeGetKnightCrownWorldPos(knight)
-	local scale_ratio = ROGE_CRABKNIGHT_SCALE / ROGE_CRABKNIGHT_VANILLA_SCALE
+local function RogeGetKnightCrownWorldPosDynamic(knight)
+	local scale_ratio = RogeGetCrabKnightScaleRatio()
 	local bx, by, bz = knight.AnimState:GetSymbolPosition(ROGE_CRABKNIGHT_CANNON_SYMBOL, 0, 0, 0)
 	return bx, by + ROGE_CRABKNIGHT_CROWN_ABOVE_BOD * scale_ratio, bz
 end
 
+-- 受击/电击/旋转攻击时 cc_bod 会随动画偏移；用实体局部固定偏移避免加农炮错位。
+local function RogeCalibrateCannontowerHeadAttach(knight, tower)
+	if knight == nil or tower == nil or not knight:IsValid() or not tower:IsValid() then
+		return
+	end
+	local hx, hy, hz = RogeGetKnightCrownWorldPosDynamic(knight)
+	local kx, ky, kz = knight.Transform:GetWorldPosition()
+	local theta = -knight.Transform:GetRotation() * DEGREES
+	local cos_t, sin_t = math.cos(theta), math.sin(theta)
+	local dx, dz = hx - kx, hz - kz
+	knight._roge_cannon_local_offset = {
+		x = dx * cos_t - dz * sin_t,
+		y = hy - ky,
+		z = dx * sin_t + dz * cos_t,
+	}
+	local tx, ty, tz = tower.Transform:GetWorldPosition()
+	tower._roge_crown_to_root = Vector3(tx - hx, ty - hy, tz - hz)
+end
+
+local function RogeGetKnightCrownWorldPos(knight)
+	local off = knight._roge_cannon_local_offset
+	if off == nil then
+		return RogeGetKnightCrownWorldPosDynamic(knight)
+	end
+	local kx, ky, kz = knight.Transform:GetWorldPosition()
+	local theta = knight.Transform:GetRotation() * DEGREES
+	local cos_t, sin_t = math.cos(theta), math.sin(theta)
+	return kx + off.x * cos_t - off.z * sin_t,
+		ky + off.y,
+		kz + off.x * sin_t + off.z * cos_t
+end
+
 local function RogeAlignTowerBaseToWorldPoint(tower, wx, wy, wz)
+	local root_off = tower._roge_crown_to_root
+	if root_off ~= nil then
+		tower.Transform:SetPosition(wx + root_off.x, wy + root_off.y, wz + root_off.z)
+		return
+	end
 	local bx, by, bz = tower.AnimState:GetSymbolPosition(ROGE_CRABKNIGHT_CANNON_BASE_SYMBOL, 0, 0, 0)
 	local tx, ty, tz = tower.Transform:GetWorldPosition()
 	tower.Transform:SetPosition(tx + (wx - bx), ty + (wy - by), tz + (wz - bz))
@@ -185,6 +242,7 @@ local function RogeRemoveCrabKnightCannontower(knight)
 		tower:Remove()
 	end
 	knight._roge_cannontower = nil
+	knight._roge_cannon_local_offset = nil
 end
 
 local function RogeStubParasiteCannontowerFloater(tower)
@@ -206,9 +264,14 @@ local function RogeDisableParasiteCannontowerFloater(tower)
 	tower._OnCollide = function() end
 end
 
-local function RogeIsValidCannonTarget(knight, target)
-	return target ~= nil and target:IsValid()
+local function RogeIsPlayerCannonTarget(target)
+	return target ~= nil and target:IsValid() and target:HasTag("player")
+		and not target:HasTag("playerghost")
 		and target.components.health ~= nil and not target.components.health:IsDead()
+end
+
+local function RogeIsValidCannonTarget(knight, target)
+	return RogeIsPlayerCannonTarget(target)
 		and knight ~= nil and knight.components.combat ~= nil
 		and knight.components.combat:CanTarget(target)
 end
@@ -224,18 +287,50 @@ local function RogeGetKnightCombatTarget(knight)
 	return target
 end
 
-local function RogeGetParasiteCannontowerTarget(tower, knight)
-	local target = RogeGetKnightCombatTarget(knight)
-	if target == nil then
-		return nil
+local function RogeGetParasiteCannonCastRange()
+	return ROGE_PARASITE_CANNON_CAST_RANGE
+end
+
+local function RogeIsInParasiteCannonRange(knight, target, cast_range)
+	if knight == nil or target == nil or not knight:IsValid() or not target:IsValid() then
+		return false
 	end
+	cast_range = cast_range or RogeGetParasiteCannonCastRange()
 	local kx, _, kz = knight.Transform:GetWorldPosition()
 	local tx, _, tz = target.Transform:GetWorldPosition()
 	local dx, dz = tx - kx, tz - kz
-	if dx * dx + dz * dz > ROGE_PARASITE_CANNON_FIND_DIST * ROGE_PARASITE_CANNON_FIND_DIST then
+	return dx * dx + dz * dz <= cast_range * cast_range
+end
+
+local function RogeResolveParasiteCannontowerTarget(tower, knight)
+	if knight == nil or not knight:IsValid() then
 		return nil
 	end
-	return target
+
+	local cast_range = RogeGetParasiteCannonCastRange()
+	local combat_target = RogeGetKnightCombatTarget(knight)
+	if combat_target ~= nil and combat_target:HasTag("player")
+		and RogeIsInParasiteCannonRange(knight, combat_target, cast_range) then
+		return combat_target
+	end
+
+	local kx, y, kz = knight.Transform:GetWorldPosition()
+	local ents = TheSim:FindEntities(
+		kx, 0, kz, cast_range, { "player" }, ROGE_PARASITE_CANNON_TARGET_CANT)
+
+	local best, best_dsq
+	for _, ent in ipairs(ents) do
+		if RogeIsValidCannonTarget(knight, ent)
+			and RogeIsInParasiteCannonRange(knight, ent, cast_range) then
+			local dsq = knight:GetDistanceSqToInst(ent)
+			if best_dsq == nil or dsq < best_dsq then
+				best = ent
+				best_dsq = dsq
+			end
+		end
+	end
+
+	return best
 end
 
 local function RogeSyncCannontowerOnKnightHead(knight, tower)
@@ -244,7 +339,7 @@ local function RogeSyncCannontowerOnKnightHead(knight, tower)
 	end
 	local hx, hy, hz = RogeGetKnightCrownWorldPos(knight)
 	RogeAlignTowerBaseToWorldPoint(tower, hx, hy, hz)
-	local target = RogeGetKnightCombatTarget(knight)
+	local target = RogeResolveParasiteCannontowerTarget(tower, knight)
 	if target ~= nil then
 		tower.Transform:SetRotation(knight:GetAngleToPoint(target.Transform:GetWorldPosition()))
 	else
@@ -292,90 +387,58 @@ local function RogeParasiteGetBurstLandingPositions(tower, target, count)
 	return positions
 end
 
-local function RogeApplyParasiteMortarballShadowStyle(shadow, gsh)
-	if shadow._roge_shadow_styled then
-		return
+local function RogeCalcParasiteMortarDamage(tower)
+	local red = tower.redgemcount or 0
+	local damage = TUNING.CRABKING_MORTAR_DAMAGE + red * TUNING.CRABKING_MORTAR_DAMAGE_BONUS
+	if red >= ROGE_CRABKNIGHT_MAXGEM_PURPLE then
+		damage = damage + TUNING.CRABKING_MORTAR_MAXGEM_DAMAGE_BONUS
 	end
-	shadow._roge_shadow_styled = true
-	if shadow.DynamicShadow ~= nil then
-		shadow.DynamicShadow:SetSize(gsh.original_width, gsh.original_height)
-	end
-	if shadow.AnimState ~= nil then
-		shadow.AnimState:OverrideMultColour(0, 0, 0, 1)
-	end
-end
-
-local function RogeSetupParasiteMortarballGroundShadow(inst)
-	if inst._roge_parasite_groundshadow_setup then
-		return
-	end
-	local gsh = inst.components.groundshadowhandler
-	if gsh == nil then
-		inst:DoTaskInTime(0, function()
-			if inst:IsValid() and inst:HasTag("_roge_parasite_mortar") then
-				RogeSetupParasiteMortarballGroundShadow(inst)
-			end
-		end)
-		return
-	end
-	inst._roge_parasite_groundshadow_setup = true
-	gsh:SetSize(ROGE_PARASITE_CANNON_SHADOW_W, ROGE_PARASITE_CANNON_SHADOW_H)
-	local old_onupdate = gsh.OnUpdate
-	gsh.OnUpdate = function(self, dt)
-		if not self.inst:IsValid() or not self.inst:HasTag("_roge_parasite_mortar") then
-			if old_onupdate ~= nil then
-				old_onupdate(self, dt)
-			end
-			return
-		end
-		if self.ground_shadow == nil or not self.ground_shadow:IsValid() then
-			if old_onupdate ~= nil then
-				old_onupdate(self, dt)
-			end
-			return
-		end
-		local land_x = self.inst._roge_land_x ~= nil and self.inst._roge_land_x:value() or nil
-		local land_z = self.inst._roge_land_z ~= nil and self.inst._roge_land_z:value() or nil
-		if land_x ~= nil and land_z ~= nil then
-			self.ground_shadow.Transform:SetPosition(land_x, 0, land_z)
-			RogeApplyParasiteMortarballShadowStyle(self.ground_shadow, self)
-			return
-		end
-		if old_onupdate ~= nil then
-			old_onupdate(self, dt)
-		end
-	end
+	return damage
 end
 
 local function RogeParasiteLaunchProjectile(tower, target, targetpos)
 	targetpos = targetpos or RogeParasiteGetShootTargetPosition(tower, target)
+	local knight = tower._roge_host_knight
+	local attacker = (knight ~= nil and knight:IsValid()) and knight or tower
 	local x, y, z = tower.AnimState:GetSymbolPosition("cannonball_rock02", 0, 0, 0)
 	local projectile = SpawnPrefab("mortarball")
-	if projectile.components.complexprojectile == nil then
-		projectile:AddComponent("complexprojectile")
+	if projectile == nil then
+		return nil
 	end
+
 	projectile.Transform:SetPosition(x, y + 0.3, z)
 	projectile.redgemcount = tower.redgemcount
-	projectile:AddTag("_roge_parasite_mortar")
-	if projectile._roge_land_x ~= nil then
-		projectile._roge_land_x:set(targetpos.x)
-	end
-	if projectile._roge_land_z ~= nil then
-		projectile._roge_land_z:set(targetpos.z)
-	end
+	projectile:setdamage(RogeCalcParasiteMortarDamage(tower))
 
 	local cp = projectile.components.complexprojectile
-	cp.usehigharc = true
-	cp:SetGravity(ROGE_PARASITE_CANNON_GRAVITY)
+	if cp == nil then
+		return projectile
+	end
+
 	local dx = targetpos.x - x
 	local dz = targetpos.z - z
-	local rangesq = dx * dx + dz * dz
-	local maxrange = TUNING.FIRE_DETECTOR_RANGE
-	local speed = easing.linear(rangesq, 15, 3, maxrange * maxrange) * ROGE_PARASITE_CANNON_HSPEED_MULT
-	cp:SetHorizontalSpeed(speed)
-	cp:Launch(targetpos, tower)
+	local dist = math.sqrt(dx * dx + dz * dz)
+	local rangesq = dist * dist
+	local maxrange = RogeGetParasiteCannonCastRange()
+	-- 近快远慢，远距离用最低命中弹速保底（同鱿鱼王喷墨）
+	local speed = easing.linear(
+		rangesq,
+		ROGE_PARASITE_CANNON_SPEED_NEAR,
+		ROGE_PARASITE_CANNON_SPEED_FAR,
+		maxrange * maxrange)
+	if dist > 0.01 and cp.CalculateMinimumSpeedForDistance ~= nil then
+		local min_speed = cp:CalculateMinimumSpeedForDistance(dist)
+		if min_speed ~= nil and min_speed > speed then
+			speed = min_speed
+		end
+	end
 
-	projectile:setdamage(ROGE_PARASITE_CANNON_DAMAGE)
+	-- 高弧线迫击炮：远距仍用弹速保底，保证能落到瞄准点
+	cp.usehigharc = true
+	cp:SetGravity(ROGE_PARASITE_CANNON_GRAVITY)
+	cp:SetHorizontalSpeed(speed)
+	cp:Launch(targetpos, attacker, attacker)
+
 	if tower.redgemcount ~= nil then
 		local scale = (tower.redgemcount > 7 and 1.3) or (tower.redgemcount < 5 and 0.65) or nil
 		if scale ~= nil then
@@ -405,7 +468,7 @@ local function RogeParasiteTryShootCannon(tower)
 		end
 		return
 	end
-	local target = RogeGetParasiteCannontowerTarget(tower, tower._roge_host_knight)
+	local target = RogeResolveParasiteCannontowerTarget(tower, tower._roge_host_knight)
 	if target ~= nil then
 		return tower:DoShootCannon(target)
 	end
@@ -436,6 +499,8 @@ local function RogeStartCannontowerHeadFollow(knight, tower)
 	if tower.MiniMapEntity ~= nil then
 		tower.MiniMapEntity:SetEnabled(false)
 	end
+	RogeSyncCannontowerOnKnightHead(knight, tower)
+	RogeCalibrateCannontowerHeadAttach(knight, tower)
 	RogeSyncCannontowerOnKnightHead(knight, tower)
 	if tower._roge_follow_task ~= nil then
 		tower._roge_follow_task:Cancel()
@@ -790,7 +855,7 @@ AddStategraphPostInit("crabking_mob", function(sg)
 					return
 				end
 				if data ~= nil and data.target ~= nil and data.target:IsValid() then
-					local use_spin = not inst:IsNear(data.target, ROGE_CRABKNIGHT_SPIN_TRIGGER_RANGE)
+					local use_spin = not inst:IsNear(data.target, RogeGetCrabKnightSpinTriggerRange())
 					inst.sg:GoToState(use_spin and "spin_attack" or "attack", data.target)
 				end
 				return
@@ -813,6 +878,15 @@ AddStategraphPostInit("crabking_mob", function(sg)
 
 	local spin_loop = sg.states["spin_attack_loop"]
 	if spin_loop ~= nil then
+		local old_spin_onenter = spin_loop.onenter
+		spin_loop.onenter = function(inst, targets)
+			if old_spin_onenter ~= nil then
+				old_spin_onenter(inst, targets)
+			end
+			if RogeIsCrabKnight(inst) then
+				inst.sg:SetTimeout(ROGE_CRABKNIGHT_SPIN_LOOP_DURATION)
+			end
+		end
 		local old_spin_onupdate = spin_loop.onupdate
 		spin_loop.onupdate = function(inst, dt)
 			if RogeIsCrabKnight(inst) then
@@ -893,14 +967,4 @@ AddPrefabPostInit("crabking_cannontower", function(inst)
 	end)
 end)
 
-AddPrefabPostInit("mortarball", function(inst)
-	inst._roge_land_x = net_float(inst.GUID, "roge_parasite_land_x", "roge_parasite_land_dirty")
-	inst._roge_land_z = net_float(inst.GUID, "roge_parasite_land_z")
-	local function try_setup()
-		if inst:IsValid() and inst:HasTag("_roge_parasite_mortar") then
-			RogeSetupParasiteMortarballGroundShadow(inst)
-		end
-	end
-	inst:DoTaskInTime(0, try_setup)
-	inst:ListenForEvent("roge_parasite_land_dirty", try_setup)
-end)
+-- mortarball 使用原版落点阴影与溅射逻辑，不再强制阴影到瞄准点（会与真实落点错位）。

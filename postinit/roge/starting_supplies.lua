@@ -161,10 +161,10 @@ function SetupRogeCommonStartingSupplies(inst)
     })
 
     local old_on_new_spawn = inst._OnNewSpawn
-    inst._OnNewSpawn = function()
-        ApplyRogeScraphatDurability(inst)
+    inst._OnNewSpawn = function(self)
+        ApplyRogeScraphatDurability(self)
         if old_on_new_spawn ~= nil then
-            old_on_new_spawn()
+            old_on_new_spawn(self)
         end
     end
 end

@@ -2,6 +2,28 @@ TUNING.BOOK_BEES_AMOUNT = 2            --养蜂笔记每次蜜蜂数量
 TUNING.BOOK_BEES_MAX_ATTACK_RANGE = 1.3 --养蜂笔记蜜蜂的最大攻击范围
 TUNING.BOOK_MAX_GRUMBLE_BEES = 8      --养蜂笔记最大蜜蜂数量
 
+local function GetBeeguardOwner(inst)
+    if inst == nil or not inst:IsValid() then
+        return nil
+    end
+    if inst.GetQueen ~= nil then
+        local queen = inst:GetQueen()
+        if queen ~= nil and queen:IsValid() then
+            return queen
+        end
+    end
+    if inst.components.follower ~= nil then
+        local leader = inst.components.follower.leader
+        if leader ~= nil and leader:IsValid() then
+            return leader
+        end
+    end
+    if inst._friendref ~= nil and inst._friendref:IsValid() then
+        return inst._friendref
+    end
+    return nil
+end
+
 -- 为book_summoned_bee设置智能索敌系统的函数（必须在前面定义，因为会在后面被调用）
 function SetSmartBeeAI(bee)
     if not bee or not bee:IsValid() or not bee.components.combat then
@@ -17,7 +39,7 @@ function SetSmartBeeAI(bee)
         end
         
         -- 获取主人（玩家）
-        local owner = inst.components.commander and inst.components.commander.commander or nil
+        local owner = GetBeeguardOwner(inst)
         if not owner or not owner:IsValid() then
             return nil
         end
@@ -44,7 +66,7 @@ function SetSmartBeeAI(bee)
                     local shared_target = other_bee.components.combat.target
                     if shared_target:IsValid() and not (shared_target.components.health and shared_target.components.health:IsDead()) then
                         local dist_sq = inst:GetDistanceSqToInst(shared_target)
-                        if dist_sq < 5 * 5 then -- 50单位范围内
+                        if dist_sq < 50 * 50 then -- 50单位范围内
                             return shared_target
                         end
                     end
@@ -52,8 +74,8 @@ function SetSmartBeeAI(bee)
             end
         end
         
-        -- 搜索附近的敌人（更大的搜索范围，智能筛选）
-        local search_range = 1 -- 搜索范围增加到40
+        -- 搜索附近的敌人
+        local search_range = 40
         local ents = TheSim:FindEntities(
             x, y, z, search_range,
             { "_combat", "_health" },
@@ -142,7 +164,7 @@ function SetSmartBeeAI(bee)
         end
         
         -- 如果目标正在攻击主人，优先保持
-        local owner = inst.components.commander and inst.components.commander.commander or nil
+        local owner = GetBeeguardOwner(inst)
         if owner and owner:IsValid() and target.components.combat and target.components.combat.target == owner then
             return true
         end
@@ -313,23 +335,8 @@ AddPrefabPostInit("beeguard", function(inst)
         inst:RemoveComponent("sleeper")
     end
 
-    local function GetBeeguardOwner(inst)
-        if inst.GetQueen ~= nil then
-            local queen = inst:GetQueen()
-            if queen ~= nil and queen:IsValid() then
-                return queen
-            end
-        end
-        if inst.components.follower ~= nil then
-            local leader = inst.components.follower.leader
-            if leader ~= nil and leader:IsValid() then
-                return leader
-            end
-        end
-        if inst._friendref ~= nil and inst._friendref:IsValid() then
-            return inst._friendref
-        end
-        return nil
+    local function GetBeeguardOwnerLocal(inst)
+        return GetBeeguardOwner(inst)
     end
 
     local BEE_SHADOW_KILL_SANITY_RADIUS = 20
@@ -337,7 +344,7 @@ AddPrefabPostInit("beeguard", function(inst)
     local function OnKillShadow(inst, data)
         local victim = data.victim
         if victim and (victim:HasTag("shadow") or victim.prefab == "dreadeye") then
-            local owner = GetBeeguardOwner(inst)
+            local owner = GetBeeguardOwnerLocal(inst)
             if owner and owner:IsValid() and owner.prefab == "wickerbottom"
                 and (victim.sanityreward or victim.prefab == "dreadeye") then
                 local sanity_delta = victim.prefab == "dreadeye" and 20 or 10
@@ -589,7 +596,7 @@ local function WickerBottomStartBeeGuardDefend(inst)
     end)
 end
 
-local function WickerBottomIsValidBeeDashMouseTarget(player, ent, sample_bee)
+local function WickerBottomIsValidBeeDashMouseTarget(player, ent, sample_bee, is_explicit)
     if ent == nil or not ent:IsValid() or player == nil then
         return false
     end
@@ -599,33 +606,42 @@ local function WickerBottomIsValidBeeDashMouseTarget(player, ent, sample_bee)
     if ent:HasTag("INLIMBO") or ent:HasTag("FX") or ent:HasTag("NOCLICK") then
         return false
     end
+    if ent:HasTag("bee") or ent:HasTag("companion") or ent:HasTag("book_summoned_bee") then
+        return false
+    end
     if ent.components.health == nil or ent.components.health:IsDead() then
         return false
     end
     if ent:HasTag("player") and not TheNet:GetPVPEnabled() then
         return false
     end
-    if sample_bee ~= nil and sample_bee.components.combat ~= nil and not sample_bee.components.combat:CanTarget(ent) then
-        return false
+    if sample_bee ~= nil and sample_bee.components.combat ~= nil then
+        if is_explicit then
+            if ent.components.combat == nil and not ent:HasTag("_combat") then
+                return false
+            end
+        elseif not sample_bee.components.combat:CanTarget(ent) then
+            return false
+        end
     end
     return true
 end
 
 local function WickerBottomResolveBeeDashTarget(inst, mouse_ent, sample_bee)
-    if WickerBottomIsValidBeeDashMouseTarget(inst, mouse_ent, sample_bee) then
+    if WickerBottomIsValidBeeDashMouseTarget(inst, mouse_ent, sample_bee, true) then
         return mouse_ent
     end
     if inst.components.combat and inst.components.combat.target then
         local t = inst.components.combat.target
-        if t:IsValid() and not (t.components.health and t.components.health:IsDead()) then
+        if WickerBottomIsValidBeeDashMouseTarget(inst, t, sample_bee, false) then
             return t
         end
     end
     local available_targets = {}
     local x, y, z = inst.Transform:GetWorldPosition()
-    local ents = TheSim:FindEntities(x, y, z, 30, { "_combat", "_health" }, { "INLIMBO", "player", "bee", "notarget", "invisible", "flight" })
+    local ents = TheSim:FindEntities(x, y, z, 30, { "_combat", "_health" }, { "INLIMBO", "player", "bee", "notarget", "invisible", "flight", "companion", "book_summoned_bee" })
     for _, ent in ipairs(ents) do
-        if WickerBottomIsValidBeeDashMouseTarget(inst, ent, sample_bee) then
+        if WickerBottomIsValidBeeDashMouseTarget(inst, ent, sample_bee, false) then
             table.insert(available_targets, ent)
         end
     end
@@ -633,6 +649,54 @@ local function WickerBottomResolveBeeDashTarget(inst, mouse_ent, sample_bee)
         return inst:GetDistanceSqToInst(a) < inst:GetDistanceSqToInst(b)
     end)
     return available_targets[1]
+end
+
+local function WickerBottomCommandBeesAttack(player, bees, attack_target)
+    if player ~= nil and player:IsValid() and player.components.commander ~= nil
+        and player.components.commander.ShareTargetToAllSoldiers ~= nil then
+        player.components.commander:ShareTargetToAllSoldiers(attack_target)
+    end
+    for _, bee in ipairs(bees) do
+        if bee:IsValid() then
+            if bee.FocusTarget ~= nil then
+                bee:FocusTarget(attack_target)
+            end
+            if bee.components.combat ~= nil then
+                bee.components.combat:SetTarget(attack_target)
+            end
+        end
+    end
+end
+
+local function WickerBottomGetBeeCommandMouseTarget()
+    local under = nil
+    if GLOBAL.TheInput ~= nil and GLOBAL.TheInput.GetWorldEntityUnderMouse ~= nil then
+        under = GLOBAL.TheInput:GetWorldEntityUnderMouse()
+    end
+    if under ~= nil and under:IsValid() then
+        return under
+    end
+    if GLOBAL.TheInput == nil or GLOBAL.TheInput.GetWorldPosition == nil then
+        return nil
+    end
+    local pos = GLOBAL.TheInput:GetWorldPosition()
+    if pos == nil then
+        return nil
+    end
+    local ents = TheSim:FindEntities(pos.x, 0, pos.z, 5, { "_combat", "_health" }, { "INLIMBO", "player", "bee", "FX", "NOCLICK", "notarget", "invisible", "flight", "companion", "book_summoned_bee" })
+    local best, best_dist_sq = nil, math.huge
+    for _, ent in ipairs(ents) do
+        if ent:IsValid() and ent.components.health ~= nil and not ent.components.health:IsDead() then
+            local ex, ey, ez = ent.Transform:GetWorldPosition()
+            local dx, dz = ex - pos.x, ez - pos.z
+            local dist_sq = dx * dx + dz * dz
+            if dist_sq < best_dist_sq then
+                best = ent
+                best_dist_sq = dist_sq
+            end
+        end
+    end
+    return best
 end
 
 AddModRPCHandler("my_mod", "bee_dash_command", function(inst, mouse_ent)
@@ -712,11 +776,7 @@ AddModRPCHandler("my_mod", "bee_dash_command", function(inst, mouse_ent)
         inst._bee_dash_clear_task = nil
     end
 
-    for _, bee in ipairs(bees) do
-        if bee:IsValid() and bee.FocusTarget ~= nil then
-            bee:FocusTarget(attack_target)
-        end
-    end
+    WickerBottomCommandBeesAttack(inst, bees, attack_target)
 
     inst._bee_dash_last_use = GetTime()
 
@@ -750,17 +810,13 @@ AddModRPCHandler("my_mod", "bee_dash_command", function(inst, mouse_ent)
     end
 end)
 
--- 客户端按键监听：把鼠标下的实体发给服务端作为集火目标
+-- 客户端按键监听：Shift+R 把鼠标下的实体（或鼠标附近最近敌人）发给服务端作为集火目标
 if GLOBAL.TheInput then
     GLOBAL.TheInput:AddKeyDownHandler(GLOBAL.KEY_R, function()
         if GLOBAL.ThePlayer ~= nil and
             GLOBAL.ThePlayer.prefab == "wickerbottom" and
             GLOBAL.TheInput:IsKeyDown(GLOBAL.KEY_SHIFT) then
-            local under = nil
-            if GLOBAL.TheInput.GetWorldEntityUnderMouse ~= nil then
-                under = GLOBAL.TheInput:GetWorldEntityUnderMouse()
-            end
-            SendModRPCToServer(MOD_RPC["my_mod"]["bee_dash_command"], under)
+            SendModRPCToServer(MOD_RPC["my_mod"]["bee_dash_command"], WickerBottomGetBeeCommandMouseTarget())
         end
     end)
 end

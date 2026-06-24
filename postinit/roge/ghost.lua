@@ -395,8 +395,8 @@ ROGE_BLOCK_HAUNT_PREFABS = {
 	crabking_cannontower = true, -- 蟹骑士寄生加农炮塔（不可作祟/附身）
 	daywalker = true,
 	daywalker1 = true,
-	daywalker2 = true,
 	ancient_hulk = true,   -- 远古兵器
+	lunar_grazer = true,   -- 牧者（不可作祟/附身）
 	-- 矮星、火球术不可作祟
 	stafflight = true,
 	constant_fire = true,
@@ -472,12 +472,7 @@ function RogeStartBlockedHauntPossessSeal(inst, max_ticks)
 	end)
 end
 
-for prefab in pairs({
-	wobysmall = true,
-	wobybig = true,
-	willow_ember = true,
-	shadow_leech = true,
-}) do
+for prefab in pairs(ROGE_BLOCK_HAUNT_PREFABS) do
 	AddPrefabPostInit(prefab, function(inst)
 		if not TheWorld.ismastersim then
 			return
@@ -604,6 +599,9 @@ end)
 AddComponentAction("SCENE", "hauntable", function(inst, doer, actions, right)
 	if doer ~= nil and doer:HasTag("playerghost") and doer.prefab ~= "webber"
 		and not RogeNonWebberGhostHauntEnabled() then
+		RemoveByValue(actions, ACTIONS.HAUNT)
+	end
+	if RogeIsHauntBlocked(inst) then
 		RemoveByValue(actions, ACTIONS.HAUNT)
 	end
 	if inst.prefab == "beefalo" and RogeBeefaloHasBeefBell(inst) then

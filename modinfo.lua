@@ -22,7 +22,7 @@ description = zh_en(
 )
 
 author = "津酒昴&暗影大法师"
-version = "7.1.3"
+version = "7.1.5.1"
 forumthread = ""
 
 api_version = 10

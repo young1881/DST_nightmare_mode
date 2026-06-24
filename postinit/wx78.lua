@@ -37,9 +37,9 @@ AddRecipePostInit("wx78module_spin", function(recipe)
     }
 end)
 
--- WX-78 专属：8 壳碎片 + 1 花环 → 尖壳头盔（用于格挡电路等材料）
+-- WX-78 专属：12 壳碎片 + 1 花环 + 24 铥矿碎片 → 尖壳头盔（用于格挡电路等材料）
 AddCharacterRecipe("slurtlehat_wx78",
-    { Ingredient("slurtle_shellpieces", 8), Ingredient("flowerhat", 1) },
+    { Ingredient("slurtle_shellpieces", 12), Ingredient("flowerhat", 1), Ingredient("thulecite_pieces", 24) },
     TECH.SCIENCE_TWO,
     {
         product = "slurtlehat",
@@ -991,7 +991,13 @@ local function NM_InitSpinMelee(wx)
 end
 
 if WX78Common ~= nil then
-    WX78Common.CanSpinUsingItem = NM_CanSpinUsingItem
+    local vanilla_CanSpinUsingItem = WX78Common.CanSpinUsingItem
+    WX78Common.CanSpinUsingItem = function(item)
+        if NM_CanSpinUsingItem(item) then
+            return true
+        end
+        return vanilla_CanSpinUsingItem ~= nil and vanilla_CanSpinUsingItem(item) or false
+    end
 end
 
 AddPrefabPostInit("wx78", NM_InitSpinMelee)

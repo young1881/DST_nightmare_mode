@@ -70,6 +70,31 @@ AddGlobalClassPostConstruct("entityscript", "EntityScript", function(self)
 		end
 		return false
 	end
+
+	-- 客户端动态 AddComponent("reticule") 后，CancelAOETargeting → StopTargeting →
+	-- RemoveComponent 可能在 UnregisterComponentActions 处因 modactioncomponents 不同步而崩溃。
+	local _orig_remove_component = self.RemoveComponent
+	if _orig_remove_component ~= nil then
+		self.RemoveComponent = function(inst, name, ...)
+			if name == nil then
+				return
+			end
+			local ok, ret = pcall(_orig_remove_component, inst, name, ...)
+			if ok then
+				return ret
+			end
+			if inst.modactioncomponents ~= nil then
+				inst.modactioncomponents = nil
+			end
+			ok, ret = pcall(_orig_remove_component, inst, name, ...)
+			if ok then
+				return ret
+			end
+			if inst.components ~= nil then
+				inst.components[name] = nil
+			end
+		end
+	end
 end)
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -327,6 +352,32 @@ local function GetDreadswordOwner(inst)
 	return nil
 end
 
+local function SafeRemoveDreadswordReticule(inst)
+	if inst == nil or inst.components.reticule == nil then
+		return
+	end
+	local ok = pcall(function()
+		inst:RemoveComponent("reticule")
+	end)
+	if not ok and inst.components.reticule ~= nil then
+		if inst.modactioncomponents ~= nil then
+			inst.modactioncomponents = nil
+		end
+		inst.components.reticule = nil
+	end
+end
+
+local function StopDreadswordParryTargeting(inst)
+	if inst == nil or not inst:IsValid() then
+		return
+	end
+	local owner = GetDreadswordOwner(inst)
+	if owner ~= nil and owner:IsValid() and owner.components.playercontroller ~= nil then
+		owner.components.playercontroller:RefreshReticule(nil)
+	end
+	SafeRemoveDreadswordReticule(inst)
+end
+
 local function StartDreadswordParryTargeting(inst, owner)
 	if TheWorld.ismastersim then
 		return false
@@ -348,23 +399,42 @@ local function StartDreadswordParryTargeting(inst, owner)
 	return true
 end
 
-local function PatchDreadswordParryStartTargeting(inst)
-	if inst._nm_start_targeting_patched or inst.components.aoetargeting == nil then
+local function PatchDreadswordParryAoetargeting(inst)
+	if inst.components.aoetargeting == nil or not IsParryDreadsword(inst) then
 		return
 	end
-	if not IsParryDreadsword(inst) then
-		return
-	end
-	inst._nm_start_targeting_patched = true
-	local aoetargeting = inst.components.aoetargeting
-	local _StartTargeting = aoetargeting.StartTargeting
-	aoetargeting.StartTargeting = function(self, ...)
-		if not IsDreadswordParryTargetingEnabled(inst) then
-			return false
+
+	if not inst._nm_start_targeting_patched then
+		inst._nm_start_targeting_patched = true
+		local aoetargeting = inst.components.aoetargeting
+		local _StartTargeting = aoetargeting.StartTargeting
+		aoetargeting.StartTargeting = function(self, ...)
+			if not IsDreadswordParryTargetingEnabled(inst) then
+				return false
+			end
+			if not TheWorld.ismastersim then
+				return StartDreadswordParryTargeting(inst, ThePlayer)
+			end
+			return _StartTargeting(self, ...)
 		end
-		return StartDreadswordParryTargeting(inst, ThePlayer)
-			or _StartTargeting(self, ...)
 	end
+
+	if not inst._nm_stop_targeting_patched then
+		inst._nm_stop_targeting_patched = true
+		local aoetargeting = inst.components.aoetargeting
+		local _StopTargeting = aoetargeting.StopTargeting
+		aoetargeting.StopTargeting = function(self, ...)
+			if not TheWorld.ismastersim then
+				StopDreadswordParryTargeting(inst)
+				return
+			end
+			return _StopTargeting(self, ...)
+		end
+	end
+end
+
+local function PatchDreadswordParryStartTargeting(inst)
+	PatchDreadswordParryAoetargeting(inst)
 end
 
 local function RefreshOwnerParryReticule(inst)
@@ -1228,6 +1298,21 @@ local function PatchLocalPlayerParryControls(player)
 			return true
 		end
 		return _TryAOETargeting(self, ...)
+	end
+
+	local _CancelAOETargeting = pc.CancelAOETargeting
+	pc.CancelAOETargeting = function(self, ...)
+		local inventory = self.inst.replica ~= nil and self.inst.replica.inventory or nil
+		if inventory ~= nil then
+			local item = inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+			if item ~= nil and item.prefab == DREADSWORD_PREFAB and IsParryDreadsword(item) then
+				StopDreadswordParryTargeting(item)
+			end
+		end
+		local ok, ret = pcall(_CancelAOETargeting, self, ...)
+		if ok then
+			return ret
+		end
 	end
 
 	local _HasAOETargeting = pc.HasAOETargeting

@@ -83,12 +83,44 @@ end
 				This is a low-priority feature, I'll consider adding it when the bigger features are taken care of.
 ]]
 
--- Action override
+-- For easily making sure if someone is still ingame
+local function Valid(Ent) return Ent and Ent.IsValid and Ent:IsValid() end
+
+local function IsActivelyPossessing(doer)
+	return Valid(doer)
+		and doer.Poss2 ~= nil
+		and doer.poss2_possessing
+		and Valid(doer.Poss2.Possessing)
+		and not doer.Poss2.Possessing:HasTag("boat")
+end
+
+-- 服务端附身攻击：Poss2.Possessing 在 PlayerStartPossessing 里设置。
+local function IsPossessionCombatActive(doer)
+	return Valid(doer)
+		and doer.Poss2 ~= nil
+		and Valid(doer.Poss2.Possessing)
+		and not doer.Poss2.Possessing:HasTag("boat")
+end
+
+-- 客户端附身攻击：Poss2.Possessing 不会自动同步到客户端，只能用 poss2_possessing。
+local function IsClientPossessingCombat(player)
+	return Valid(player) and player.poss2_possessing == true
+end
+
+local function SyncPossessingTargetNet(Possessor, Possessed)
+	if Possessor.net_poss2_target == nil then
+		return
+	end
+	Possessor.net_poss2_target:set(Possessed)
+	Possessor.net_poss2_target:set_local(Possessed)
+end
+
+-- Action override: only while actively possessing (prevents post-release empty attacks on humans)
 for _,Action in pairs(GA) do
 	PrintDebug("Action Override: \"".._.."\"!")
 	local OLDFN = Action.fn
 	Action.fn = function(act, ...)
-		if act.doer and act.doer.Poss2 and act.doer.Poss2.Possessing and not act.doer.Poss2.Possessing:HasTag("boat") then
+		if IsActivelyPossessing(act.doer) then
 			PrintDebug(act.doer.name.." forced "..act.doer.Poss2.Possessing.name.." to perform action \"".._.."\"!")
 			act.doer = act.doer.Poss2.Possessing
 		end
@@ -152,7 +184,7 @@ end
 AddComponentPostInit("playercontroller", function(self)
 	local OldOnRemoteControllerAttackButton = self.OnRemoteControllerAttackButton
 	self.OnRemoteControllerAttackButton = function(self, target, isreleased, noforce)
-		if self.inst.Poss2 and self.inst.Poss2.Possessing and target and target:IsValid() then
+		if IsPossessionCombatActive(self.inst) and target and target:IsValid() then
 			local possessed = self.inst.Poss2.Possessing
 
 			if possessed.components.combat then
@@ -258,8 +290,10 @@ local function SetVal(val,newval)
 end
 
 -- For use in the MakePossessable function
-local function MakeHauntable(Thing,Start)
-	if not Thing then return end
+local function MakeHauntable(Thing, Start)
+	if not Thing then
+		return
+	end
 
 	if not Thing.components.hauntable then
 		Thing:AddComponent("hauntable")
@@ -267,11 +301,13 @@ local function MakeHauntable(Thing,Start)
 
 	Thing.components.hauntable.cooldown = 0
 	Thing.components.hauntable.usefx = false
-	Thing.components.hauntable.onhaunt = Start
+	Thing.components.hauntable.onhaunt = function(inst, haunter)
+		if RogeIsHauntBlocked ~= nil and RogeIsHauntBlocked(inst) then
+			return false
+		end
+		return Start(inst, haunter)
+	end
 end
-
--- For easily making sure if someone is still ingame
-local function Valid(Ent) return Ent and Ent.IsValid and Ent:IsValid() end
 
 -- Blank function which acts as a replacement when none are available
 local NoFN = function() return end
@@ -410,6 +446,17 @@ local function CanChangeSG(Thing)
 	return not BadStates[Thing.sg.currentstate.name]
 end
 
+local function RogePossessedInPreAttackCombat(Possessed)
+	if Possessed.sg == nil then
+		return false
+	end
+	if Possessed.sg:HasStateTag("taunt") or Possessed.sg:HasStateTag("attack") then
+		return true
+	end
+	local state = Possessed.sg.currentstate ~= nil and Possessed.sg.currentstate.name
+	return state == "nm_pre_attack_taunt" or state == "roge_pre_attack_taunt"
+end
+
 -- This is really messy. clean it up later
 local function doPossessionFx(Possessed,Possessor)
 	if not Valid(Possessed) or not Valid(Possessor) then return end
@@ -431,7 +478,7 @@ local function doPossessionFx(Possessed,Possessor)
 			elseif Possessed.sg:HasState("startle") then
 				Possessed.sg:GoToState("startle")
 			end
-		elseif Possessed.sg:HasState("hit") then
+		elseif Possessed.sg:HasState("hit") and not RogePossessedInPreAttackCombat(Possessed) then
 			Possessed.sg:GoToState("hit")
 		end
 	end
@@ -611,6 +658,25 @@ end
 
 -- Generic function run on all possessions
 local function PlayerStopPossessing(Possessed,Possessor)
+	-- Clear possession routing before restoring control so humans use vanilla attack logic.
+	Possessor.Poss2.Possessing = nil
+	SyncPossessingTargetNet(Possessor, nil)
+	Possessor:SetPossessing(false)
+	Possessor:SetPossessingPlayer(false)
+
+	if Possessor.components.playercontroller then
+		if Possessor.components.locomotor ~= nil then
+			Possessor.components.playercontroller.locomotor = Possessor.components.locomotor
+		elseif Possessor.Poss2.Loco.Old ~= nil then
+			Possessor.components.playercontroller.locomotor = Possessor.Poss2.Loco.Old
+		end
+		Possessor.Poss2.Loco.Old = nil
+	end
+
+	if Possessor.components.combat then
+		Possessor.components.combat.ignorehitrange = false
+	end
+
 	Possessed.Poss2.Level = Possessed.Poss2.Level - 1
 
 	-- 取消无敌状态
@@ -636,10 +702,6 @@ local function PlayerStopPossessing(Possessed,Possessor)
 		Possessed:RemoveEventCallback("temperaturedelta",UpdateTemperature)
 	end
 
-	if Possessor.components.playercontroller then
-		Possessor.components.playercontroller.locomotor = Possessor.Poss2.Loco.Old
-	end
-
 	Possessor:DoTaskInTime(0,function()
 		local S = Possessor.Poss2.Scale
 		Possessor.Transform:SetScale(S[1],S[2],S[3])
@@ -654,7 +716,6 @@ local function PlayerStopPossessing(Possessed,Possessor)
 	Possessor.MiniMapEntity:SetEnabled(true)
 	Possessor.Light:SetRadius(Possessor.Poss2.LightRad)
 	Possessor.Poss2.LightRad = 0
-	Possessor.Poss2.Possessing = nil
 	Possessed.Poss2.Possessors[Possessor.GUID] = nil
 
 	ResetStats(Possessor)
@@ -667,8 +728,6 @@ local function PlayerStopPossessing(Possessed,Possessor)
 	end
 
 	Possessor.Poss2.Timer:Cancel()
-	Possessor:SetPossessing(false)
-	Possessor:SetPossessingPlayer(false)
 
 	OnPossessionChanged(Possessed,Possessor)
 	if Possessed:HasTag("player") then Possessed:SetPossessed(false) end
@@ -725,6 +784,7 @@ local function PlayerStartPossessing(Possessed,Possessor)
 	Possessor.Light:SetRadius(0.000001)
  
 	Possessor.Poss2.Possessing = Possessed
+	SyncPossessingTargetNet(Possessor, Possessed)
 	Possessed.Poss2.Possessors[Possessor.GUID] = Possessor
 	Poss2.Possessed[Possessed.GUID] = Possessed
 
@@ -1046,9 +1106,14 @@ end
 local PrefabCanBePossessed = {}
 
 -- Make something possessable
-local function MakePossessable(Thing,Tick,Start,Stop,Perms)
-	if Thing.Poss2 then return end
-	MakeHauntable(Thing,Start)
+local function MakePossessable(Thing, Tick, Start, Stop, Perms)
+	if Thing.Poss2 then
+		return
+	end
+	if RogeIsHauntBlocked ~= nil and RogeIsHauntBlocked(Thing) then
+		return
+	end
+	MakeHauntable(Thing, Start)
 	Thing.Poss2 = CreatePossessionTable(Tick,Start,Stop,Perms)
 	Thing:ListenForEvent("onremove",EmergencyShutoff)
 	Thing:ListenForEvent("death",EmergencyShutoff)
@@ -1232,7 +1297,6 @@ local ThingsYouCanPossess = {
 		"mutatedbuzzard_gestalt",
 		"otter",
 		"mutated_penguin",
-		"lunar_grazer",
 		"rabbitkingminion_bunnyman",
 		"wagdrone_rolling",
 		"wagdrone_flying",
@@ -1364,8 +1428,11 @@ end
 -- Automatically detect all unwhitelisted entities. (Useful for modded servers & future-proofing)
 if D("Everything except Players & Boats") ~= 0 then
 	PrintDebug("Possession is Enabled for 'Everything except Players & Boats!'")
-	AddClassPostConstruct("components/locomotor",function(self)
-		self.inst:DoTaskInTime(0,function()
+	AddClassPostConstruct("components/locomotor", function(self)
+		self.inst:DoTaskInTime(0, function()
+			if RogeIsHauntBlocked ~= nil and RogeIsHauntBlocked(self.inst) then
+				return
+			end
 			if not self.inst:HasTag("player") and self.inst.prefab then
 				PrefabCanBePossessed[self.inst.prefab] = true
 				MakePossessable(self.inst,GenericTickFN,GenericInitFN,GenericEndFN,D("Everything except Players & Boats"))
@@ -1378,6 +1445,9 @@ end
 -- 使用游戏已有的标签来判断可附身生物（仅针对未在 ThingsYouCanPossess 中列出的模组生物）
 AddPrefabPostInitAny(function(inst)
 	inst:DoTaskInTime(0, function()
+		if RogeIsHauntBlocked ~= nil and RogeIsHauntBlocked(inst) then
+			return
+		end
 		-- 已列入白名单的跳过
 		if PrefabCanBePossessed[inst.prefab] then return end
 		-- 检查是否有combat组件且不是玩家或船
@@ -1438,6 +1508,7 @@ AddPlayerPostInit(function(player)
 		player.net_poss2_possessing = player.net_poss2_possessing or G.net_bool(player.GUID, "poss2_possessing", "poss2_possessing_dirty")
 		player.net_poss2_possessing_player = player.net_poss2_possessing_player or G.net_bool(player.GUID, "poss2_possessing_player", "poss2_possessing_player_dirty")
 		player.net_poss2_possessed = player.net_poss2_possessed or G.net_bool(player.GUID, "poss2_possessed", "poss2_possessed_dirty")
+		player.net_poss2_target = player.net_poss2_target or G.net_entity(player.GUID, "poss2_target", "poss2_target_dirty")
 
 		if not G.TheWorld.ismastersim then
 			local function Poss2Say_dirty(player)
@@ -1455,6 +1526,17 @@ AddPlayerPostInit(function(player)
 
 			local function Poss2_Possessing_Dirty(player)
 				player.poss2_possessing = player.net_poss2_possessing:value()
+				if not player.poss2_possessing and player.Poss2 ~= nil then
+					player.Poss2.Possessing = nil
+				end
+			end
+
+			local function Poss2_Target_Dirty(player)
+				if player.Poss2 == nil then
+					return
+				end
+				local ent = player.net_poss2_target:value()
+				player.Poss2.Possessing = (ent ~= nil and ent:IsValid()) and ent or nil
 			end
 
 			-- necessary for speech control
@@ -1472,6 +1554,8 @@ AddPlayerPostInit(function(player)
 			player:ListenForEvent("poss2_possessing_dirty",Poss2_Possessing_Dirty)
 			player:ListenForEvent("poss2_possessing_player_dirty",Poss2_Possessing_Player_Dirty)
 			player:ListenForEvent("poss2_possessed_dirty",Poss2_Possessed_Dirty)
+			player:ListenForEvent("poss2_target_dirty",Poss2_Target_Dirty)
+			Poss2_Target_Dirty(player)
 		else
 			function player:Poss2Say(message)
 				local msg = message or ""
@@ -1624,18 +1708,19 @@ local function ClientBackdoor()
 		end
 	end)
 
-	-- 添加攻击按钮处理 - 最简单的方式，不检查任何状态
+	-- 关闭延迟补偿时，附身操控需要额外走 ControllerAttackButton RPC；
+	-- 不可对普通玩家全局启用，否则鼠标指向目标即可无视距离攻击（防空 A bug）。
 	local OldOnControl = G.TheInput.OnControl
 	G.TheInput.OnControl = function(self, control, down, ...)
-		-- 检测攻击按钮
 		if down and control == G.CONTROL_ATTACK and G.ThePlayer then
-			local target = G.TheInput:GetWorldEntityUnderMouse()
-			if target and target:IsValid() and not target:IsInLimbo() and target ~= G.ThePlayer then
-				-- 直接使用游戏内置的攻击RPC
-				G.SendRPCToServer(G.RPC.ControllerAttackButton, target, true)
+			local player = G.ThePlayer
+			if IsClientPossessingCombat(player) then
+				local target = G.TheInput:GetWorldEntityUnderMouse()
+				if target and target:IsValid() and not target:IsInLimbo() and target ~= player then
+					G.SendRPCToServer(G.RPC.ControllerAttackButton, target, true)
+				end
 			end
 		end
-		-- 调用原始函数
 		return OldOnControl(self, control, down, ...)
 	end
 
@@ -1702,7 +1787,8 @@ local function AddPoss2Button(self)
         end
 
         local is_ghost      = player:HasTag("playerghost") or player:HasTag("ghost")
-        local is_possessing = player.Poss2 and player.Poss2.Possessing
+        local is_possessing = player.poss2_possessing
+            or (player.Poss2 and Valid(player.Poss2.Possessing))
         local lang = LOC.GetLocaleCode()
         local isCN = (lang == "zh" or lang == "zht" or lang == "zhr")
 
